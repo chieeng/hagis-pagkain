@@ -45,4 +45,5 @@ jobs:
           status=${PIPESTATUS[0]}
           set -e
           grep -q " passed, 0 failed" test.log || { echo "::error::Tests failed or did not run."; exit 1; }
+          if grep -E "SCRIPT ERROR" test.log; then echo "::error::A script error happened during the tests."; exit 1; fi
           exit $status

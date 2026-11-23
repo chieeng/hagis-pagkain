@@ -1,0 +1,13 @@
+{
+	"_note": "Placeholder animals drawn as simple shapes until real art exists (owner: Alex). Proposal: [8] per biome.",
+	"forest": [
+		{"id": "kuneho", "name": "Kuneho", "en": "rabbit", "color": "#c9b8a6"},
+		{"id": "ibon", "name": "Ibon", "en": "bird", "color": "#4dabf7"},
+		{"id": "unggoy", "name": "Unggoy", "en": "monkey", "color": "#8d5a3b"},
+		{"id": "kuwago", "name": "Kuwago", "en": "owl", "color": "#a07850"},
+		{"id": "tarsier", "name": "Tarsier", "en": "tarsier", "color": "#c4a484"},
+		{"id": "baboy-ramo", "name": "Baboy-ramo", "en": "wild boar", "color": "#6f4e37"},
+		{"id": "ardilya", "name": "Ardilya", "en": "squirrel", "color": "#d9822b"},
+		{"id": "bayawak", "name": "Bayawak", "en": "monitor lizard", "color": "#6b8e23"}
+	]
+}

@@ -13,6 +13,32 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
 3. Press F5. You should see "Items loaded: …".
 4. Read `AGENTS.md`. It holds the team rules, and your coding assistant reads it too.
 
+## What the prototype does (Forest, din/rin)
+
+- Main menu → **Gubat** [Forest]. An animal walks in and says a sentence with a blank.
+- Drag a food (**din** or **rin**) and let go to throw it.
+- Preferred form: the animal joins the pen (**Kulungan**) and you get coins.
+  Otherwise the animal walks away, the deciding last letter is highlighted with the rule,
+  and the sentence comes back later. A second miss on it shows a worked example.
+- Stages: vowel → consonant → w/y, then mixed practice on the weakest stage.
+- **Aklat ng Hayop** [Animal Index] shows the 8 Forest animals. The next biome unlocks when the
+  Index is full **and** every stage reaches 80% over its last 15 sentences.
+- Press **F3** while playing to see the per-stage accuracy (team only).
+- Not built yet: the River/Mountain/Sky biomes, audio, shop and throw power, rare/golden animals,
+  the egg bonus round, My Progress, and real art (animals and food are placeholder shapes).
+
+All numbers live in `core/GameConfig.gd`. All learner-facing Filipino text is in `ui/Strings.gd`
+and `core/Hints.gd`, ready for review.
+
+## Check it without playing
+
+```
+godot --path . -- --autoplay --nosave --shots=C:/some/folder
+```
+
+The game plays 14 rounds by itself using simulated finger drags (including two misses, to show both hint
+levels), saves screenshots of each screen and quits. `--nosave` leaves your real save alone.
+
 ## Folders
 
 | Folder | What | Owner |

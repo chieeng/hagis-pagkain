@@ -45,9 +45,12 @@ also listed in `.github/CODEOWNERS`, so GitHub asks them to review.
 |---|---|---|
 | Lead | Integration, core gameplay, build | `project.godot`, `main/`, `autoload/GameState.gd`, `core/ThrowController.*`, `core/FoodItem.*`, `biomes/BiomeTemplate.*`, `.github/` |
 | Loraine | Biome levels (assists Lead) | `biomes/forest/`, `biomes/river/`, `biomes/mountain/`, `biomes/sky/` |
-| Irish | Systems | `core/DRRule.gd`, `autoload/SaveManager.gd`, scoring/adaptivity scripts, `tests/` |
-| Jian | Content + QA/research | `data/`, `autoload/QuestionBank.gd`, `docs/testing/` |
-| Alex | UI, art, audio | `ui/`, `assets/`, `autoload/AudioManager.gd` |
+| Irish | Systems | `core/DRRule.gd`, `core/BiomeSession.gd`, `core/Progress.gd`, `core/Hints.gd` (logic), `core/GameConfig.gd`, `autoload/SaveManager.gd`, `tests/` |
+| Jian | Content + QA/research | `data/`, `autoload/QuestionBank.gd`, `docs/testing/`, Filipino wording in `ui/Strings.gd` and `core/Hints.gd` |
+| Alex | UI, art, audio | `ui/` (except Strings wording), `assets/`, `autoload/AudioManager.gd` |
+
+Game logic stays in `core/BiomeSession.gd` and `core/Progress.gd`, which have no visuals and are unit-tested.
+Scenes only display it. All tunable numbers go in `core/GameConfig.gd`.
 
 **Scenes (`.tscn`) cause the worst merge conflicts.** Never edit a scene you do not own, even "just a
 small fix". Make your own small scene and instance it.

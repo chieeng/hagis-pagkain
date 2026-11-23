@@ -1,35 +1,56 @@
 [
 	{
-		"id": "forest-001",
-		"biome": "forest",
-		"pair": "din/rin",
-		"sentence": "Masaya ___ ako.",
-		"prev_word": "Masaya",
-		"answer": "rin",
-		"translation": "I am happy too.",
-		"status": "draft",
-		"note": "Sample placeholder from the proposal examples. Jian replaces after KWF/adviser check."
+		"id": "forest-v01", "biome": "forest", "pair": "din/rin", "stage": "vowel", "difficulty": 1,
+		"sentence": "Kumain ka ___ ba?", "prev_word": "ka", "answer": "rin",
+		"translation": "Did you eat too?", "audio": "", "status": "draft",
+		"note": "Proposal GO1 example (KWF-checked). Grade 4 naturalness not yet checked."
 	},
 	{
-		"id": "forest-002",
-		"biome": "forest",
-		"pair": "din/rin",
-		"sentence": "Pinsan ___ ni Ana si Ben.",
-		"prev_word": "Pinsan",
-		"answer": "din",
-		"translation": "Ben is also Ana's cousin.",
-		"status": "draft",
-		"note": "Sample placeholder. Consonant ending keeps d."
+		"id": "forest-v02", "biome": "forest", "pair": "din/rin", "stage": "vowel", "difficulty": 1,
+		"sentence": "Masaya ___ ako.", "prev_word": "Masaya", "answer": "rin",
+		"translation": "I am happy too.", "audio": "", "status": "draft",
+		"note": "From the proposal's Background example 'Masaya rin'."
 	},
 	{
-		"id": "forest-003",
-		"biome": "forest",
-		"pair": "din/rin",
-		"sentence": "Mura ___ ang mangga.",
-		"prev_word": "Mura",
-		"answer": "din",
-		"translation": "The mango is also cheap.",
-		"status": "draft",
-		"note": "Sample placeholder. KWF exception -ra keeps d."
+		"id": "forest-v03", "biome": "forest", "pair": "din/rin", "stage": "vowel", "difficulty": 1,
+		"sentence": "Maganda ___ ang puno.", "prev_word": "Maganda", "answer": "rin",
+		"translation": "The tree is beautiful too.", "audio": "", "status": "draft",
+		"note": "Prototype placeholder, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "forest-c01", "biome": "forest", "pair": "din/rin", "stage": "consonant", "difficulty": 1,
+		"sentence": "Gutom ___ ako.", "prev_word": "Gutom", "answer": "din",
+		"translation": "I am hungry too.", "audio": "", "status": "draft",
+		"note": "Proposal GO1 example (KWF-checked)."
+	},
+	{
+		"id": "forest-c02", "biome": "forest", "pair": "din/rin", "stage": "consonant", "difficulty": 1,
+		"sentence": "Matamis ___ ang mangga.", "prev_word": "Matamis", "answer": "din",
+		"translation": "The mango is sweet too.", "audio": "", "status": "draft",
+		"note": "Proposal GO1 example (KWF-checked)."
+	},
+	{
+		"id": "forest-c03", "biome": "forest", "pair": "din/rin", "stage": "consonant", "difficulty": 1,
+		"sentence": "Malungkot ___ ang unggoy.", "prev_word": "Malungkot", "answer": "din",
+		"translation": "The monkey is sad too.", "audio": "", "status": "draft",
+		"note": "Built on the proposal's Background example 'Malungkot din'. Sentence is a prototype placeholder."
+	},
+	{
+		"id": "forest-w01", "biome": "forest", "pair": "din/rin", "stage": "wy", "difficulty": 2,
+		"sentence": "Ikaw ___ ang taya.", "prev_word": "Ikaw", "answer": "rin",
+		"translation": "You are 'it' too.", "audio": "", "status": "draft",
+		"note": "Proposal GO1 example (KWF-checked)."
+	},
+	{
+		"id": "forest-w02", "biome": "forest", "pair": "din/rin", "stage": "wy", "difficulty": 2,
+		"sentence": "Kahoy ___ ang bahay ng kuneho.", "prev_word": "Kahoy", "answer": "rin",
+		"translation": "The rabbit's house is also made of wood.", "audio": "", "status": "draft",
+		"note": "Proposal GO1 example (KWF-checked)."
+	},
+	{
+		"id": "forest-w03", "biome": "forest", "pair": "din/rin", "stage": "wy", "difficulty": 2,
+		"sentence": "Ikaw ___ ang pupunta.", "prev_word": "Ikaw", "answer": "rin",
+		"translation": "You will be the one to go too.", "audio": "", "status": "draft",
+		"note": "Proposal Background example (KWF-checked)."
 	}
 ]

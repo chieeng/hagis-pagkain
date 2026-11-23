@@ -1,9 +1,12 @@
 extends Node
 ## Owner: Irish (Systems).
 ## Offline save to the device (user://). No internet, no accounts.
+## Run with `-- --nosave` to play without touching the save or the log (used by autoplay checks).
 
 const SAVE_PATH := "user://save.json"
 const LOG_PATH := "user://play_log.jsonl"
+
+var enabled := not "--nosave" in OS.get_cmdline_user_args()
 
 
 func _ready() -> void:
@@ -11,6 +14,8 @@ func _ready() -> void:
 
 
 func save_game() -> void:
+	if not enabled:
+		return
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
 		push_error("Save failed: %s" % FileAccess.get_open_error())
@@ -19,16 +24,19 @@ func save_game() -> void:
 
 
 func load_game() -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
+	if not enabled or not FileAccess.file_exists(SAVE_PATH):
 		return
 	var data = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
 	if data is Dictionary:
 		GameState.from_dict(data)
 
 
-## One line per answer. Used later for the validation data (error counts per pair).
-## TODO(Irish): agree the exact fields with Jian so they match the research instruments.
-func log_answer(item_id: String, chosen: String, correct: bool) -> void:
+## One JSON line per throw, for the evaluation data [proposal, "Data tracked"]:
+## first-throw accuracy per pair/context/biome, hints shown, time per answer.
+## TODO(Irish + Jian): add session id and streaks; agree the final fields with the research instruments.
+func log_answer(entry: Dictionary) -> void:
+	if not enabled:
+		return
 	var f: FileAccess
 	if FileAccess.file_exists(LOG_PATH):
 		f = FileAccess.open(LOG_PATH, FileAccess.READ_WRITE)
@@ -37,9 +45,5 @@ func log_answer(item_id: String, chosen: String, correct: bool) -> void:
 		f = FileAccess.open(LOG_PATH, FileAccess.WRITE)
 	if f == null:
 		return
-	f.store_line(JSON.stringify({
-		"t": Time.get_datetime_string_from_system(),
-		"item": item_id,
-		"chosen": chosen,
-		"correct": correct,
-	}))
+	entry["t"] = Time.get_datetime_string_from_system()
+	f.store_line(JSON.stringify(entry))
