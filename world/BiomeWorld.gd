@@ -41,6 +41,9 @@ var _aim_ring: MeshInstance3D
 var _spawn_cooldown := 0.0
 var _hint_token := 0
 var _popup_token := 0
+var _cam_focus: Node3D = null   ## the camera chases the fruit, then looks at the reveal
+var _shake := 0.0
+var _shown_coins := -1
 
 # HUD
 var ui: CanvasLayer
@@ -62,6 +65,9 @@ var catch_box: VBoxContainer
 var index_page: AnimalIndex
 var shop: FruitShop
 var debug_label: Label
+var speed_lines: SpeedLines
+var flash: ColorRect
+var distance_label: Label
 
 # Autoplay
 var autoplay := DebugTools.has_arg("--autoplay")
@@ -313,9 +319,18 @@ func _process(delta: float) -> void:
 
 
 func _place_camera(weight: float) -> void:
-	var want := player.global_position + CAMERA_OFFSET
+	var focus := player.global_position
+	var offset := CAMERA_OFFSET
+	if _cam_focus != null and is_instance_valid(_cam_focus):
+		# Chase the fruit / show the reveal, pulled back a bit so the whole moment fits.
+		focus = player.global_position.lerp(_cam_focus.global_position, 0.75)
+		offset = CAMERA_OFFSET * 1.2
+	var want := focus + offset
 	camera.global_position = camera.global_position.lerp(want, clamp(weight, 0.0, 1.0))
-	camera.look_at(camera.global_position - CAMERA_OFFSET + Vector3(0, 1, 0))
+	camera.look_at(camera.global_position - offset + Vector3(0, 1, 0))
+	if _shake > 0.01:
+		camera.global_position += Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * _shake * 0.35
+		_shake = move_toward(_shake, 0.0, get_process_delta_time() * 2.5)
 
 
 ## Picks the animal being aimed at, shows a ring under it and the green band on the meter.
@@ -442,46 +457,92 @@ func _throw(power: float) -> void:
 			if hit == null or a == target:
 				hit = a
 
+	# PERPEKTO [perfect]: released right in the middle of the green band (skill, not luck).
+	var perfect := false
+	if hit != null and hit == target:
+		perfect = abs(power * _range() - _flat_distance(target.global_position)) <= GameConfig.HIT_RADIUS * GameConfig.PERFECT_WINDOW
+
 	var proj := Node3D.new()
 	add_child(proj)
 	var tier := GameState.progress.equipped_tier()
 	Blocky.sphere(proj, 0.32, Color(tier.color), Vector3.ZERO)
 	Blocky.label3d(proj, fruit, Vector3(0, 0.65, 0), 46)
+	var trail := Fx.sparkles(proj, Color(tier.color))
+	trail.position = Vector3.ZERO
+	trail.local_coords = false
 	var start := player.hand_position()
 	proj.global_position = start
-	var flight: float = clamp(0.35 + power * 0.5, 0.4, 0.9)
+	var flight: float = clamp(0.45 + power * 0.6, 0.5, 1.1)
+	var throw_dist := power * _range()
+
+	# Thrill: whoosh, speed lines, camera chases the fruit, distance counter, slow-motion at the end.
+	AudioManager.play("whoosh")
+	speed_lines.burst(flight + 0.3)
+	_cam_focus = proj
+	distance_label.visible = true
+	if autoplay:
+		_bot_snap_later("25_flight", flight * 0.45)
 	var t := create_tween()
 	t.tween_method(func(k: float) -> void:
 		var end := (hit.global_position + Vector3(0, 1.3, 0)) if hit != null and is_instance_valid(hit) else landing + Vector3(0, 0.3, 0)
-		var ctrl := (start + end) / 2.0 + Vector3(0, 2.0 + power * 3.0, 0)
+		var ctrl := (start + end) / 2.0 + Vector3(0, 2.5 + power * 4.0, 0)
 		proj.global_position = start.lerp(ctrl, k).lerp(ctrl.lerp(end, k), k)
+		proj.rotation.z = k * TAU * 2.0
+		distance_label.text = "%.1f m" % (k * throw_dist)
+		if hit != null and k > 0.72:
+			Engine.time_scale = 0.4
 	, 0.0, 1.0, flight)
 	await t.finished
-	_throwing = false
+	Engine.time_scale = 1.0
+	var dl := create_tween()
+	dl.tween_interval(0.8)
+	dl.tween_callback(func() -> void: distance_label.visible = false)
 	if hit != null and is_instance_valid(hit) and hit.is_wild():
 		proj.queue_free()
-		_resolve(hit, fruit)
+		AudioManager.play("hit")
+		_cam_focus = hit
+		if perfect:
+			Fx.float_text(self, hit.global_position + Vector3(0, 4.2, 0), Strings.PERFECT, Color("#74c0fc"), 120, 1.8, 1.3)
+			AudioManager.play("perfect")
+			if autoplay:
+				_bot_snap_later("28_perfect", 0.2)
+		await _resolve(hit, fruit, perfect)
+		_cam_focus = null
 	else:
+		_cam_focus = null
 		# Missed the animal: about aiming, not about d/r, so nothing is logged or counted.
 		var short := target != null and is_instance_valid(target) and power * _range() < _flat_distance(target.global_position)
 		_show_toast(Strings.TOO_SHORT if short else Strings.TOO_FAR, 1.2)
+		AudioManager.play("miss", 1.3)
 		await get_tree().create_timer(0.6).timeout
 		proj.queue_free()
+	_throwing = false   # only now can the next throw start (after the reveal)
 
 
-func _resolve(target: Animal3D, fruit: String) -> void:
+func _resolve(target: Animal3D, fruit: String, perfect: bool = false) -> void:
+	var was_new := not GameState.progress.has_animal(biome, target.data.get("id", ""))
 	var r := session.answer(fruit, target.item, target.data, target.rarity)
+	if r.correct and perfect:
+		GameState.progress.coins += GameConfig.PERFECT_BONUS
+		r.coins = int(r.coins) + GameConfig.PERFECT_BONUS
 	SaveManager.log_answer({
 		"biome": biome, "item": target.item.get("id", ""), "pair": target.item.get("pair", ""),
 		"stage": target.item.get("stage", ""), "chosen": fruit, "correct": r.correct,
 		"hint_level": r.hint_level, "animal": target.data.get("id", ""), "rarity": target.rarity,
 		"streak": r.streak, "coins": GameState.progress.coins,
-		"ms_since_start": Time.get_ticks_msec() - _started_ms,
+		"ms_since_start": Time.get_ticks_msec() - _started_ms, "perfect": perfect,
 	})
+	# Suspense first ("What did we get?"), then the reveal.
+	AudioManager.play("drum")
+	if autoplay:
+		_bot_snap_later("26_suspense", 0.35)
+	await target.suspense(0.75)
+	if not is_instance_valid(target):
+		return
 	if r.correct:
 		target.coins_earned = r.coins
 		followers.append(target)
-		_show_catch(target, r)
+		_celebrate(target, r, was_new)
 		target.eat(player, followers.size() - 1)
 		# Streak bonus: a rare (3 in a row) or golden (6+) animal appears farther away.
 		if r.streak >= GameConfig.RARE_STREAK and r.streak % GameConfig.RARE_STREAK == 0:
@@ -489,11 +550,53 @@ func _resolve(target: Animal3D, fruit: String) -> void:
 			if bonus != null:
 				_show_toast("%s: %s!" % [Strings.RARITY_NAMES[bonus.rarity], bonus.data.get("name", "")], 1.6)
 	else:
+		AudioManager.play("miss")
+		Fx.float_text(self, target.global_position + Vector3(0, 3.2, 0), "?", Color("#ced4da"), 120, 1.2, 1.0)
 		var exit := Vector3(target.global_position.x, 0, -MAP_HALF - 4)
 		target.sniff(exit)
 		_show_hint(target.item, r.hint_level)
 	SaveManager.save_game()
 	_refresh_hud()
+	await get_tree().create_timer(0.9).timeout
+
+
+## The big reveal after a correct throw. Bigger for rarer animals.
+func _celebrate(target: Animal3D, r: Dictionary, was_new: bool) -> void:
+	var level := {"common": 0, "rare": 1, "golden": 2}.get(target.rarity, 0) as int
+	var col: Color = [Color("#69db7c"), Color("#66d9e8"), Color("#ffd43b")][level]
+	var pos := target.global_position
+	Fx.beam(self, pos, col, [10.0, 15.0, 22.0][level], [1.2, 1.6, 2.2][level])
+	Fx.shockwave(self, pos, col, [5.0, 8.0, 12.0][level])
+	Fx.confetti(self, pos + Vector3(0, 1.5, 0), [50, 90, 160][level])
+	if level == 2:
+		Fx.confetti(self, pos + Vector3(0, 3.0, 0), 120, [Color("#ffd43b"), Color("#fff3bf"), Color("#fab005")])
+	target.pop()
+	_flash([0.3, 0.5, 0.75][level])
+	_shake = [0.35, 0.7, 1.2][level]
+	AudioManager.play(["correct", "rare", "golden"][level])
+	Fx.float_text(self, pos + Vector3(0, 3.4, 0), "+%d" % r.coins, Color("#ffd43b"), 120, 2.6, 1.4)
+	get_tree().create_timer(0.35).timeout.connect(func() -> void: AudioManager.play("coin"))
+	_show_catch(target, r, was_new)
+	if int(r.streak) >= 2:
+		_bump_combo()
+		AudioManager.play("combo", 1.0 + 0.06 * min(int(r.streak), 10))
+	if autoplay:
+		_bot_snap_later("27_reveal" if level == 0 else "27_reveal_%s" % target.rarity, 0.35)
+
+
+func _flash(strength: float) -> void:
+	flash.color.a = strength
+	var t := create_tween()
+	t.tween_property(flash, "color:a", 0.0, 0.35)
+
+
+func _bump_combo() -> void:
+	combo_label.pivot_offset = combo_label.size / 2.0
+	combo_label.scale = Vector2.ONE * 1.8
+	var hot: float = clamp(session.streak / 10.0, 0.0, 1.0)
+	combo_label.add_theme_color_override("font_color", Color("#ffd43b").lerp(Color("#ff6b6b"), hot))
+	var t := create_tween()
+	t.tween_property(combo_label, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _on_arrived_in_pen(a: Animal3D) -> void:
@@ -521,6 +624,22 @@ func _on_arrived_in_pen(a: Animal3D) -> void:
 func _build_ui() -> void:
 	ui = CanvasLayer.new()
 	add_child(ui)
+
+	speed_lines = SpeedLines.new()
+	ui.add_child(speed_lines)
+	flash = ColorRect.new()
+	flash.color = Color(1, 1, 1, 0)
+	flash.position = Vector2.ZERO
+	flash.size = get_viewport().get_visible_rect().size
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(flash)
+	distance_label = UiKit.label("", 64, Color.WHITE, 16)
+	distance_label.add_theme_color_override("font_outline_color", Color("#1971c2"))
+	distance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	distance_label.size = Vector2(1280, 90)
+	distance_label.position = Vector2(0, 380)
+	distance_label.visible = false
+	ui.add_child(distance_label)
 
 	var back := UiKit.button(Strings.BACK, 24, Color("#495057"))
 	back.position = Vector2(16, 14)
@@ -639,7 +758,20 @@ func _build_ui() -> void:
 
 
 func _refresh_hud() -> void:
-	coins_label.text = Strings.COINS % GameState.progress.coins
+	var coins := GameState.progress.coins
+	if _shown_coins < 0 or coins < _shown_coins:
+		_shown_coins = coins
+		coins_label.text = Strings.COINS % coins
+	elif coins > _shown_coins:
+		# Count up with a bounce, like a coin counter.
+		var from := _shown_coins
+		_shown_coins = coins
+		var t := create_tween()
+		t.tween_method(func(v: float) -> void: coins_label.text = Strings.COINS % int(v), float(from), float(coins), 0.6)
+		coins_label.pivot_offset = coins_label.size / 2.0
+		var b := create_tween()
+		b.tween_property(coins_label, "scale", Vector2.ONE * 1.35, 0.12)
+		b.tween_property(coins_label, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BOUNCE)
 	index_button.text = "%s  %d/%d" % [Strings.INDEX, GameState.progress.collected_count(biome), session.animals.size()]
 	follow_label.text = "" if followers.is_empty() else "%s   %s" % [Strings.FOLLOWING % followers.size(), Strings.TAKE_HOME]
 	var tier := GameState.progress.equipped_tier()
@@ -655,7 +787,7 @@ func _refresh_hud() -> void:
 
 
 ## "NAHULI MO!" popup after a correct throw: animal, rarity, the whole sentence, coins.
-func _show_catch(a: Animal3D, r: Dictionary) -> void:
+func _show_catch(a: Animal3D, r: Dictionary, was_new: bool = false) -> void:
 	_popup_token += 1
 	var token := _popup_token
 	hint_panel.visible = false
@@ -663,9 +795,18 @@ func _show_catch(a: Animal3D, r: Dictionary) -> void:
 		catch_box.remove_child(c)
 		c.queue_free()
 	var colors := {"common": Color("#2b8a3e"), "rare": Color("#1098ad"), "golden": Color("#e67700")}
-	var title := UiKit.label(Strings.CAUGHT, 44, colors.get(a.rarity, Color("#2b8a3e")))
+	var title_text := Strings.CAUGHT
+	if a.rarity != "common":
+		title_text = Strings.RARE_CATCH[a.rarity]
+	var title := UiKit.label(title_text, 48, colors.get(a.rarity, Color("#2b8a3e")), 6)
+	title.add_theme_color_override("font_outline_color", Color.WHITE)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	catch_box.add_child(title)
+	if was_new:
+		var badge := UiKit.label(Strings.NEW_BADGE, 30, Color.WHITE, 10)
+		badge.add_theme_color_override("font_outline_color", Color("#e03131"))
+		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		catch_box.add_child(badge)
 	var who := UiKit.label("%s  ·  %s" % [a.data.get("name", ""), Strings.RARITY_NAMES.get(a.rarity, "")], 32, UiKit.INK)
 	who.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	catch_box.add_child(who)
@@ -680,6 +821,12 @@ func _show_catch(a: Animal3D, r: Dictionary) -> void:
 	catch_box.add_child(cl)
 	catch_panel.visible = true
 	catch_panel.reset_size()
+	# Pop in with a bounce.
+	catch_panel.pivot_offset = Vector2(350, 120)
+	catch_panel.scale = Vector2.ONE * 0.3
+	var pop := create_tween()
+	pop.tween_property(catch_panel, "scale", Vector2.ONE * 1.08, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	pop.tween_property(catch_panel, "scale", Vector2.ONE, 0.12)
 	catch_panel.call_deferred("reset_size")
 	if autoplay:
 		_bot_snap_later("20_catch" if a.rarity == "common" else "22_catch_rare", 0.25)
@@ -824,7 +971,7 @@ func _bot_throw(target: Animal3D) -> void:
 		await get_tree().create_timer(0.9).timeout
 		await DebugTools.snap(self, "24_too_short")
 	else:
-		release_throw(clamp(needed, 0.05, 1.0))
+		release_throw(clamp(needed + randf_range(-0.06, 0.06), 0.05, 1.0))   # like a child: near, not exact
 
 
 func _bot_shop() -> void:

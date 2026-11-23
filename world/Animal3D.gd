@@ -51,9 +51,12 @@ func setup(p_data: Dictionary, p_item: Dictionary, p_state: State = State.WILD, 
 		var badge := Blocky.label3d(self, Strings.RARITY_NAMES.get(rarity, ""), Vector3(0, 3.1, 0), 60,
 			Color("#99e9f2") if rarity == "rare" else Color("#ffd43b"))
 		badge.name = "Badge"
-		# a ring under rare/golden animals so they stand out from far away
-		var ring := Blocky.cylinder(self, 1.3, 0.05, Color("#66d9e8") if rarity == "rare" else Color("#fcc419"), Vector3(0, 0.03, 0))
+		# a ring, sparkles and a light pillar so rare/golden animals are spotted from far away
+		var glow := Color("#66d9e8") if rarity == "rare" else Color("#fcc419")
+		var ring := Blocky.cylinder(self, 1.3, 0.05, glow, Vector3(0, 0.03, 0))
 		ring.name = "Ring"
+		Fx.sparkles(self, glow).name = "Sparkles"
+		Fx.pillar(self, glow).name = "Pillar"
 	# Blocky body facing +z
 	Blocky.box(_model, Vector3(0.9, 0.7, 1.2), color, Vector3(0, 0.75, 0))
 	Blocky.box(_model, Vector3(0.75, 0.7, 0.7), color.lightened(0.08), Vector3(0, 1.3, 0.6))
@@ -169,6 +172,29 @@ func _face(dir: Vector3, delta: float) -> void:
 	if dir.length() < 0.01:
 		return
 	_model.rotation.y = lerp_angle(_model.rotation.y, atan2(dir.x, dir.z), min(1.0, delta * 8.0))
+
+
+## The moment of suspense after the fruit lands: the animal sniffs while "?" marks float up.
+func suspense(seconds: float = 0.7) -> void:
+	_busy = true
+	for i in 3:
+		Fx.float_text(get_parent(), global_position + Vector3(randf_range(-1.0, 1.0), 2.6 + i * 0.3, 0), "?",
+			Color("#ffe066"), 110, 1.6, seconds + 0.2)
+	var t := create_tween()
+	for a in [0.12, -0.12, 0.12, -0.12, 0.0]:
+		t.tween_property(_model, "rotation:y", _model.rotation.y + a, seconds / 5.0)
+	await t.finished
+
+
+## Big "pop" when caught: grow, then settle (rarer = bigger).
+func pop() -> void:
+	var base: Vector3 = _model.scale
+	var t := create_tween()
+	t.tween_property(_model, "scale", base * 1.6, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(_model, "scale", base, 0.25).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	for n in ["Pillar", "Sparkles"]:
+		if has_node(n):
+			get_node(n).queue_free()
 
 
 ## The preferred form: eat, say the whole sentence, then follow the player.

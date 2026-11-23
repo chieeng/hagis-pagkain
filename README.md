@@ -28,6 +28,13 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
    - **Combo:** correct first throws in a row raise a coin multiplier; 3 in a row brings a **Bihira** [rare]
      animal, 6 a **Ginto** [golden] one. They are shyer, so they need a stronger throw.
    - **Tindahan** [Shop]: spend coins on better fruit that flies farther (Bayabas 10 m → Gintong Mangga 20 m).
+   - **Thrill ("juice")**: whoosh + speed lines + the camera chases the fruit with a distance counter and
+     slow-motion at the end; a moment of suspense ("?" marks, drum roll); then the reveal: light beam,
+     shockwave, confetti, screen flash and shake, sound, "NAHULI MO!" / "BIHIRANG HULI!" / "GINTONG HULI!!"
+     popup with a **BAGO!** [NEW!] badge, coins counting up. Rare/golden animals glow with sparkles and a light
+     pillar visible across the map. Releasing in the middle of the green band gives **PERPEKTO!** [PERFECT!]
+     and bonus coins. Thrill comes from skill and correct answers, never from random luck.
+   - Sounds are simple placeholder tones made in code (`autoload/AudioManager.gd`) until real sounds exist.
 3. The next biome unlocks when the Index is full **and** every stage reaches 80% over its last 15 sentences.
    Press **F3** to see per-stage accuracy (team only).
 

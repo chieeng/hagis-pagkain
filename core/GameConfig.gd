@@ -22,6 +22,8 @@ const RARITY_SHY_DISTANCE := {"common": 3.0, "rare": 6.0, "golden": 8.5}  ## [pr
 ## Throwing: the power meter (0..1) times the fruit's range, in metres.
 const HIT_RADIUS := 2.3         ## [prototype] how close the fruit must land to the animal
 const METER_PERIOD := 1.6       ## [prototype] seconds for the meter to go up and down once
+const PERFECT_WINDOW := 0.4     ## [prototype] "PERPEKTO!" if the landing is within 40% of HIT_RADIUS
+const PERFECT_BONUS := 3        ## [prototype] extra coins for a perfect AND correct throw
 ## Fruit shop tiers [proposal: "coins buy new kinds of food"]. Better fruit flies farther.
 const FRUIT_TIERS: Array[Dictionary] = [
 	{"id": "bayabas", "name": "Bayabas", "range": 10.0, "price": 0, "color": "#94d82d"},
