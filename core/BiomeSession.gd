@@ -32,6 +32,9 @@ var misses: Dictionary = {}
 ## [{ "item": Dictionary, "due": int }]
 var requeue: Array = []
 
+## Correct first throws in a row (resets on a miss). Drives the combo and rare/golden animals.
+var streak := 0
+
 var _last_item_id := ""
 var _left_animal_id := ""
 var rng := RandomNumberGenerator.new()
@@ -119,10 +122,12 @@ func _pick_animal(busy_animal_ids: Array = []) -> Dictionary:
 	return animals[rng.randi() % animals.size()]
 
 
-## Reports one throw at an animal. `item`/`animal` default to the last ones picked.
-## Returns { correct, stage, hint_level (0, 1 or 2), animal_id }.
-## A correct animal is NOT in the pen yet: it follows the player until deliver() is called.
-func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}) -> Dictionary:
+## Reports one throw that reached an animal. `item`/`animal` default to the last ones picked.
+## `rarity` is the animal's: "common", "rare" or "golden".
+## Returns { correct, stage, hint_level (0, 1 or 2), animal_id, coins, streak, multiplier }.
+## Coins are paid now [proposal: a correct first throw earns coins]. The animal joins the
+## Animal Index only when it reaches the pen (deliver()).
+func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}, rarity: String = "common") -> Dictionary:
 	if item.is_empty():
 		item = current
 	if animal.is_empty():
@@ -133,14 +138,21 @@ func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}) -> D
 	for entry in requeue:
 		entry.due -= 1
 
-	var result := {"correct": correct, "stage": stage, "hint_level": 0, "animal_id": animal.get("id", "")}
+	var result := {"correct": correct, "stage": stage, "hint_level": 0, "animal_id": animal.get("id", ""),
+		"coins": 0, "streak": 0, "multiplier": 1}
 	if correct:
+		streak += 1
 		_left_animal_id = ""
+		result.multiplier = multiplier()
+		result.coins = int(GameConfig.RARITY_COINS.get(rarity, GameConfig.COINS_PER_CORRECT)) * int(result.multiplier)
+		progress.coins += int(result.coins)
 	else:
+		streak = 0
 		misses[item.id] = int(misses.get(item.id, 0)) + 1
 		result.hint_level = 1 if misses[item.id] == 1 else 2
 		requeue.append({"item": item, "due": GameConfig.REQUEUE_GAP})
 		_left_animal_id = animal.get("id", "")
+	result.streak = streak
 
 	if not mixed:
 		answered_in_stage += 1
@@ -153,13 +165,27 @@ func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}) -> D
 	return result
 
 
-## A fed animal reached the pen: add it to the Animal Index and pay coins.
-## Returns { coins, new_animal, cleared }.
-func deliver(animal_id: String) -> Dictionary:
-	progress.coins += GameConfig.COINS_PER_CORRECT
+## Coin multiplier from the current streak: x1, then +1 for every COMBO_STEP in a row.
+func multiplier() -> int:
+	return min(GameConfig.COMBO_MAX_MULT, 1 + streak / GameConfig.COMBO_STEP)
+
+
+## Rarity for a newly appearing animal, from the current streak.
+func next_rarity() -> String:
+	if streak >= GameConfig.GOLDEN_STREAK:
+		return "golden"
+	if streak >= GameConfig.RARE_STREAK:
+		return "rare"
+	return "common"
+
+
+## A fed animal reached the pen: add it (and its rarity) to the Animal Index.
+## Returns { new_animal, new_variant, cleared }.
+func deliver(animal_id: String, rarity: String = "common") -> Dictionary:
 	var is_new := progress.collect(biome, animal_id)
+	var new_variant := progress.add_variant(biome, animal_id, rarity)
 	return {
-		"coins": GameConfig.COINS_PER_CORRECT,
 		"new_animal": is_new,
+		"new_variant": new_variant,
 		"cleared": progress.biome_cleared(biome, stages, animals.size()),
 	}

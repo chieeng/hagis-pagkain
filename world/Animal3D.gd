@@ -18,6 +18,8 @@ const WALK_SPEED := 2.2
 const FOLLOW_SPEED := 6.5
 
 var data: Dictionary = {}      ## from data/animals.json
+var rarity := "common"         ## "common", "rare" or "golden"
+var coins_earned := 0          ## paid when it was fed (shown in the catch popup)
 var item: Dictionary = {}      ## the sentence this animal carries (empty when IN_PEN from a save)
 var state := State.WILD
 var wander_area := Rect2(-24, -26, 48, 30)
@@ -34,13 +36,24 @@ var _speech: Label3D
 var _busy := false   ## playing an eat/sniff animation
 
 
-func setup(p_data: Dictionary, p_item: Dictionary, p_state: State = State.WILD) -> void:
+func setup(p_data: Dictionary, p_item: Dictionary, p_state: State = State.WILD, p_rarity: String = "common") -> void:
 	data = p_data
 	item = p_item
 	state = p_state
+	rarity = p_rarity
 	var color := Color(data.get("color", "#c08552"))
+	if rarity == "golden":
+		color = color.lerp(Color("#ffd43b"), 0.75)
 	_model = Node3D.new()
 	add_child(_model)
+	_model.scale = Vector3.ONE * {"common": 1.0, "rare": 1.2, "golden": 1.4}.get(rarity, 1.0)
+	if rarity != "common":
+		var badge := Blocky.label3d(self, Strings.RARITY_NAMES.get(rarity, ""), Vector3(0, 3.1, 0), 60,
+			Color("#99e9f2") if rarity == "rare" else Color("#ffd43b"))
+		badge.name = "Badge"
+		# a ring under rare/golden animals so they stand out from far away
+		var ring := Blocky.cylinder(self, 1.3, 0.05, Color("#66d9e8") if rarity == "rare" else Color("#fcc419"), Vector3(0, 0.03, 0))
+		ring.name = "Ring"
 	# Blocky body facing +z
 	Blocky.box(_model, Vector3(0.9, 0.7, 1.2), color, Vector3(0, 0.75, 0))
 	Blocky.box(_model, Vector3(0.75, 0.7, 0.7), color.lightened(0.08), Vector3(0, 1.3, 0.6))
@@ -87,8 +100,18 @@ func _process(delta: float) -> void:
 		return
 	match state:
 		State.WILD:
-			if player != null and global_position.distance_to(player.global_position) < 4.5:
-				_face(player.global_position - global_position, delta)   # wait for the learner
+			var shy: float = GameConfig.RARITY_SHY_DISTANCE.get(rarity, 3.0)
+			var dist := global_position.distance_to(player.global_position) if player != null else INF
+			if dist < shy:
+				# Too close: back away, so the learner has to throw from a distance.
+				var away := global_position - player.global_position
+				away.y = 0
+				var spot := global_position + away.normalized() * 3.0
+				spot.x = clamp(spot.x, wander_area.position.x, wander_area.end.x)
+				spot.z = clamp(spot.z, wander_area.position.y, wander_area.end.y)
+				_walk_to(spot, delta, WALK_SPEED * 1.6, 0.1)
+			elif dist < shy + 6.0:
+				_face(player.global_position - global_position, delta)   # stop and wait for a throw
 			else:
 				_wander(delta, wander_area, WALK_SPEED)
 		State.IN_PEN:
@@ -159,6 +182,8 @@ func eat(target: Node3D, slot: int) -> void:
 	t.tween_interval(1.6)
 	await t.finished
 	_speech.text = ""
+	if has_node("Ring"):
+		get_node("Ring").visible = false
 	state = State.FOLLOW
 	follow_target = target
 	follow_slot = slot

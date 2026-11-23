@@ -47,6 +47,17 @@ func open(biome: String) -> void:
 		sprite.setup(a, 52)
 		sprite.name_label.add_theme_color_override("font_color", UiKit.INK)
 		sprite.name_label.add_theme_constant_override("outline_size", 0)
+		# Rare / golden versions found (proposal: common, rare and golden animals).
+		var rarities_found := []
+		for r in ["rare", "golden"]:
+			if GameState.progress.has_variant(biome, a.id, r):
+				rarities_found.append(Strings.RARITY_NAMES[r])
+		if not rarities_found.is_empty():
+			var badge := UiKit.label(" · ".join(rarities_found), 20, Color("#e67700"))
+			badge.position = Vector2(0, 180)
+			badge.size = Vector2(236, 26)
+			badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			slot.add_child(badge)
 		grid.add_child(slot)
 
 	var close := UiKit.button(Strings.BACK)

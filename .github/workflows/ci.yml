@@ -46,4 +46,12 @@ jobs:
           set -e
           grep -q " passed, 0 failed" test.log || { echo "::error::Tests failed or did not run."; exit 1; }
           if grep -E "SCRIPT ERROR" test.log; then echo "::error::A script error happened during the tests."; exit 1; fi
+
+      - name: Play the game by itself (menu, lesson, 3D forest)
+        run: |
+          set +e
+          timeout 300 godot --headless --path . -- --autoplay --nosave 2>&1 | tee play.log
+          set -e
+          grep -q "AUTOPLAY 3D" play.log || { echo "::error::Autoplay did not finish."; exit 1; }
+          if grep -E "SCRIPT ERROR" play.log; then echo "::error::A script error happened while playing."; exit 1; fi
           exit $status

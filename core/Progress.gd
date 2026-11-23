@@ -12,6 +12,11 @@ var history: Dictionary = {}
 var unlocked: Dictionary = {"forest": true}
 ## biome -> true once the learner has finished that biome's lesson (Aralin)
 var lessons_done: Dictionary = {}
+## biome -> { animal id -> Array of rarities found ("common", "rare", "golden") }
+var variants: Dictionary = {}
+## Fruit shop: owned tier ids and the one in use.
+var owned_fruits: Array = ["bayabas"]
+var equipped_fruit: String = "bayabas"
 
 
 func record(biome: String, stage: String, correct: bool) -> void:
@@ -58,6 +63,49 @@ func collect(biome: String, animal_id: String) -> bool:
 	return true
 
 
+## Returns true if this rarity of this animal is new.
+func add_variant(biome: String, animal_id: String, rarity: String) -> bool:
+	if not variants.has(biome):
+		variants[biome] = {}
+	var per_animal: Dictionary = variants[biome]
+	if not per_animal.has(animal_id):
+		per_animal[animal_id] = []
+	var found: Array = per_animal[animal_id]
+	if rarity in found:
+		return false
+	found.append(rarity)
+	return true
+
+
+func has_variant(biome: String, animal_id: String, rarity: String) -> bool:
+	return rarity in variants.get(biome, {}).get(animal_id, [])
+
+
+static func fruit_tier(tier_id: String) -> Dictionary:
+	for t in GameConfig.FRUIT_TIERS:
+		if t.id == tier_id:
+			return t
+	return GameConfig.FRUIT_TIERS[0]
+
+
+func equipped_tier() -> Dictionary:
+	return fruit_tier(equipped_fruit)
+
+
+## Buys (if needed) and equips a fruit tier. Returns false if there are not enough coins.
+func buy_fruit(tier_id: String) -> bool:
+	if tier_id in owned_fruits:
+		equipped_fruit = tier_id
+		return true
+	var t := fruit_tier(tier_id)
+	if t.id != tier_id or coins < int(t.price):
+		return false
+	coins -= int(t.price)
+	owned_fruits.append(tier_id)
+	equipped_fruit = tier_id
+	return true
+
+
 func has_animal(biome: String, animal_id: String) -> bool:
 	return animal_id in collected.get(biome, [])
 
@@ -97,7 +145,8 @@ func weakest_stage(biome: String, stages: Array) -> String:
 
 
 func to_dict() -> Dictionary:
-	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked, "lessons_done": lessons_done}
+	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked, "lessons_done": lessons_done,
+		"variants": variants, "owned_fruits": owned_fruits, "equipped_fruit": equipped_fruit}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -106,3 +155,6 @@ func from_dict(data: Dictionary) -> void:
 	history = data.get("history", {})
 	unlocked = data.get("unlocked", {"forest": true})
 	lessons_done = data.get("lessons_done", {})
+	variants = data.get("variants", {})
+	owned_fruits = data.get("owned_fruits", ["bayabas"])
+	equipped_fruit = str(data.get("equipped_fruit", "bayabas"))

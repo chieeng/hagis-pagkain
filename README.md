@@ -18,17 +18,20 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
 1. **Aralin [Lesson] first** (automatically the first time; replay from the menu or the in-game button):
    look at examples → tap the last letter of words → drag words into the **rin** or **din** basket → play.
 2. **3D Forest (Pet Simulator style):** walk with the joystick (or WASD / arrow keys). Wild animals wear a
-   word tag (*Ikaw*, *Gutom*, *Masaya*). Pick a fruit in the hotbar (**rin** / **din**, keys 1 and 2) and press
-   **Ihagis** (or Space) near an animal.
-   - Preferred form: it eats, says the whole sentence and follows you. Walk into the **Kulungan** [pen]:
-     it joins the Animal Index and you get coins.
+   word tag (*Ikaw*, *Gutom*, *Masaya*). Pick **rin** or **din** in the hotbar (keys 1 and 2), then **hold
+   Ihagis** (or Space): the power meter goes up and down. Let go inside the green band to reach the animal
+   with the orange ring. Animals back away if you get too close.
+   - Preferred form: **"NAHULI MO!"** popup with the whole sentence and coins. The animal follows you; walk
+     into the **Kulungan** [pen] to add it to the Animal Index.
    - Otherwise: it sniffs and walks off; a hint highlights the deciding last letter (worked example on the
      second miss of the same sentence). The sentence comes back later on another animal. No lives, no timer.
+   - **Combo:** correct first throws in a row raise a coin multiplier; 3 in a row brings a **Bihira** [rare]
+     animal, 6 a **Ginto** [golden] one. They are shyer, so they need a stronger throw.
+   - **Tindahan** [Shop]: spend coins on better fruit that flies farther (Bayabas 10 m → Gintong Mangga 20 m).
 3. The next biome unlocks when the Index is full **and** every stage reaches 80% over its last 15 sentences.
    Press **F3** to see per-stage accuracy (team only).
 
-Not built yet: River/Mountain/Sky, audio, shop and throw-power upgrades, rare/golden animals, the egg bonus
-round, My Progress, real art (everything is coloured boxes), and a test on a real phone.
+Not built yet: River/Mountain/Sky, audio, the egg bonus round, coins from pen animals over time, My Progress, real art (everything is coloured boxes), and a test on a real phone.
 
 All numbers live in `core/GameConfig.gd`. All learner-facing Filipino text is in `ui/Strings.gd`
 and `core/Hints.gd`, ready for review.

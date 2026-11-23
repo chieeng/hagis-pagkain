@@ -44,6 +44,22 @@ const THROW := "Ihagis"                                               # [Throw]
 const FOLLOWING := "Sumusunod: %d"                                    # [Following: %d]
 const TAKE_HOME := "Dalhin sila sa kulungan!"                          # [Take them to the pen!]
 const NO_ANIMAL_NEAR := "Lumapit sa isang hayop!"                     # [Go closer to an animal!]
+const TOO_SHORT := "Kulang ang lakas! Subukan ulit."                   # [Not strong enough! Try again.]
+const TOO_FAR := "Sobrang lakas! Subukan ulit."                        # [Too strong! Try again.]
+const HOLD_TO_THROW := "Pindutin nang matagal, saka bitawan!"         # [Press and hold, then let go!]
+const CAUGHT := "NAHULI MO!"                                           # [YOU CAUGHT IT!]
+const COMBO := "x%d COMBO"
+const MULTIPLIER := "Barya ×%d"                                        # [Coins ×%d]
+const RARITY_NAMES := {"common": "Karaniwan", "rare": "Bihira", "golden": "Ginto"}   # [Common, Rare, Golden]
+const SHOP := "Tindahan"                                               # [Shop]
+const SHOP_TITLE := "Tindahan ng Prutas"                               # [Fruit Shop]
+const SHOP_RANGE := "Layo: %d m"                                       # [Distance: %d m]
+const SHOP_PRICE := "%d barya"                                         # [%d coins]
+const SHOP_BUY := "Bilhin"                                             # [Buy]
+const SHOP_USE := "Gamitin"                                            # [Use]
+const SHOP_IN_USE := "Gamit na"                                        # [In use]
+const SHOP_NOTE := "Mas malayo ang abot ng mas magandang prutas."      # [Better fruit reaches farther.]
+const SHOP_BOUGHT := "Nabili: %s!"                                     # [Bought: %s!]
 
 ## Stage names shown small at the top of a biome.
 const STAGE_NAMES := {

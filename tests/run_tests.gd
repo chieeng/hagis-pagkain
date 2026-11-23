@@ -169,11 +169,12 @@ func test_session() -> void:
 	var r := s.answer(item.answer)
 	check("correct", r.correct, true)
 	check("no hint after correct", r.hint_level, 0)
+	check("coins on a correct throw", p.coins, GameConfig.RARITY_COINS.common)
 	check("not in the pen before delivery", p.collected_count("forest"), 0)
 	var d := s.deliver(r.animal_id)
-	check("coins on delivery", p.coins, GameConfig.COINS_PER_CORRECT)
 	check("animal collected on delivery", p.collected_count("forest"), 1)
 	check("new animal flag", d.new_animal, true)
+	check("common variant recorded", p.has_variant("forest", r.animal_id, "common"), true)
 
 	# Wrong throw: hint level 1, no animal, the sentence is re-queued.
 	item = s.next_sentence()
@@ -213,6 +214,43 @@ func test_session() -> void:
 	for a in busy_a:
 		unique_a[a] = true
 	check("4 different animals out at once", unique_a.size(), 4)
+
+	# Streaks: rare after 3 in a row, golden after 6, coin multiplier grows; a miss resets.
+	var p4 := Progress.new()
+	var s4 := BiomeSession.new("forest", _items(), _animals(8), p4, 4)
+	check("starts common", s4.next_rarity(), "common")
+	for i in GameConfig.RARE_STREAK:
+		var it := s4.next_sentence()
+		s4.answer(it.answer)
+	check("rare after 3 in a row", s4.next_rarity(), "rare")
+	check("multiplier x2 after 3", s4.multiplier(), 2)
+	for i in GameConfig.GOLDEN_STREAK - GameConfig.RARE_STREAK:
+		var it := s4.next_sentence()
+		s4.answer(it.answer)
+	check("golden after 6 in a row", s4.next_rarity(), "golden")
+	var before := p4.coins
+	var it2 := s4.next_sentence()
+	var rr := s4.answer(it2.answer, {}, {}, "golden")
+	check("golden coins = rarity x multiplier", p4.coins - before, GameConfig.RARITY_COINS.golden * rr.multiplier)
+	var it3 := s4.next_sentence()
+	var wrong3 := DRRule.r_form(it3.answer) if it3.answer == DRRule.d_form(it3.answer) else DRRule.d_form(it3.answer)
+	s4.answer(wrong3)
+	check("a miss resets the streak", s4.streak, 0)
+	check("no coins for a miss", p4.coins - before, GameConfig.RARITY_COINS.golden * rr.multiplier)
+	check("back to common after a miss", s4.next_rarity(), "common")
+
+	# Fruit shop
+	var p5 := Progress.new()
+	check("cannot buy without coins", p5.buy_fruit("mangga"), false)
+	p5.coins = 45
+	check("buy mangga", p5.buy_fruit("mangga"), true)
+	check("coins spent", p5.coins, 5)
+	check("mangga equipped", p5.equipped_tier().id, "mangga")
+	check("switch back for free", p5.buy_fruit("bayabas"), true)
+	check("coins unchanged on switch", p5.coins, 5)
+	var copy5 := Progress.new()
+	copy5.from_dict(JSON.parse_string(JSON.stringify(p5.to_dict())))
+	check("shop saved", copy5.owned_fruits.has("mangga"), true)
 
 	# Unlocking needs the whole Index AND 80% in every stage.
 	var p2 := Progress.new()
