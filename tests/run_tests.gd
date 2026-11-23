@@ -165,12 +165,15 @@ func test_session() -> void:
 	check("two choices", s.current_choices.size(), 2)
 	check("choices are the pair", s.current_choices.has("din") and s.current_choices.has("rin"), true)
 
-	# Correct throw: animal joins the pen, coins added.
+	# Correct throw: the animal follows; it joins the pen (and pays coins) only when delivered.
 	var r := s.answer(item.answer)
 	check("correct", r.correct, true)
-	check("coins", p.coins, GameConfig.COINS_PER_CORRECT)
-	check("animal collected", p.collected_count("forest"), 1)
 	check("no hint after correct", r.hint_level, 0)
+	check("not in the pen before delivery", p.collected_count("forest"), 0)
+	var d := s.deliver(r.animal_id)
+	check("coins on delivery", p.coins, GameConfig.COINS_PER_CORRECT)
+	check("animal collected on delivery", p.collected_count("forest"), 1)
+	check("new animal flag", d.new_animal, true)
 
 	# Wrong throw: hint level 1, no animal, the sentence is re-queued.
 	item = s.next_sentence()
@@ -197,13 +200,28 @@ func test_session() -> void:
 		s.answer(x.answer)
 	check("mixed practice after the last stage", s.mixed, true)
 
+	# Several animals at once: busy animals and sentences are not handed out twice.
+	var p3 := Progress.new()
+	var s3 := BiomeSession.new("forest", _items(), _animals(8), p3, 3)
+	var busy_a := []
+	var busy_i := []
+	for i in 4:
+		var it := s3.next_sentence(busy_a, busy_i)
+		busy_a.append(s3.current_animal.id)
+		busy_i.append(it.id)
+	var unique_a := {}
+	for a in busy_a:
+		unique_a[a] = true
+	check("4 different animals out at once", unique_a.size(), 4)
+
 	# Unlocking needs the whole Index AND 80% in every stage.
 	var p2 := Progress.new()
 	var s2 := BiomeSession.new("forest", _items(), _animals(2), p2, 2)
 	var cleared := false
 	for i in 200:
 		var x := s2.next_sentence()
-		cleared = s2.answer(x.answer).cleared
+		var ans := s2.answer(x.answer)
+		cleared = s2.deliver(ans.animal_id).cleared
 		if cleared:
 			break
 	check("cleared after enough correct answers", cleared, true)

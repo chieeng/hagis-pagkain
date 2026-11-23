@@ -14,7 +14,9 @@ const BIOMES := {
 const BIOME_ORDER: Array[String] = ["forest", "river", "mountain", "sky"]
 const BIOME_NAMES := {"forest": "Gubat", "river": "Ilog", "mountain": "Bundok", "sky": "Himpapawid"}
 ## Biomes that have a playable scene in this build.
-const BIOME_SCENES := {"forest": "res://biomes/forest/Forest.tscn"}
+const BIOME_SCENES := {"forest": "res://biomes/forest/Forest3D.tscn"}
+## Lesson shown before a biome the first time.
+const LESSON_SCENE := "res://ui/Lesson.tscn"
 
 var progress := Progress.new()
 

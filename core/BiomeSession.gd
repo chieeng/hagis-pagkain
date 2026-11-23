@@ -1,7 +1,7 @@
 class_name BiomeSession
 extends RefCounted
 ## The game logic of one biome visit, with no visuals, so it can be unit-tested.
-## BiomeTemplate (the scene) asks this for the next sentence and reports each throw.
+## world/BiomeWorld.gd (the 3D scene) asks this for sentences and reports each throw and delivery.
 ##
 ## Flow [proposal, Part 3]:
 ##   - Stages in order: vowel -> consonant -> w/y (-> exception in Sky). Then mixed practice that
@@ -61,81 +61,86 @@ func current_stage() -> String:
 	return stages[stage_index]
 
 
-## Picks the next sentence and the animal that says it. Returns {} if there are no items.
-func next_sentence() -> Dictionary:
+## Picks the next sentence and the animal that will wear its word tag. Returns {} if there are no items.
+## `busy_animal_ids` / `busy_item_ids`: animals and sentences already out in the world.
+func next_sentence(busy_animal_ids: Array = [], busy_item_ids: Array = []) -> Dictionary:
 	if items.is_empty():
 		return {}
 	current = {}
 	for i in requeue.size():
-		if requeue[i].due <= 0:
+		if requeue[i].due <= 0 and not requeue[i].item.id in busy_item_ids:
 			current = requeue[i].item
 			requeue.remove_at(i)
 			break
 	if current.is_empty():
-		current = _pick_from_stage(current_stage())
+		current = _pick_from_stage(current_stage(), busy_item_ids)
 	_last_item_id = current.id
-	current_animal = _pick_animal()
+	current_animal = _pick_animal(busy_animal_ids)
 	current_choices = [DRRule.d_form(current.answer), DRRule.r_form(current.answer)]
 	if rng.randi() % 2 == 1:
 		current_choices.reverse()
 	return current
 
 
-func _pick_from_stage(stage: String) -> Dictionary:
+func _pick_from_stage(stage: String, busy_item_ids: Array = []) -> Dictionary:
 	var pool: Array[Dictionary] = []
 	for item in items:
-		if item.stage == stage and item.id != _last_item_id:
+		if item.stage == stage and item.id != _last_item_id and not item.id in busy_item_ids:
 			pool.append(item)
 	if pool.is_empty():
 		for item in items:
-			if item.id != _last_item_id:
+			if item.id != _last_item_id and not item.id in busy_item_ids:
 				pool.append(item)
 	if pool.is_empty():
 		pool = items
 	return pool[rng.randi() % pool.size()]
 
 
-## The first animal not yet in the pen, but not the one that just walked away
-## (it "comes back later"). When all are collected, any animal can appear again.
-func _pick_animal() -> Dictionary:
+## The first animal not yet in the pen and not already out in the world, avoiding the one
+## that just walked away (it "comes back later"). When all are collected, any free animal appears again.
+func _pick_animal(busy_animal_ids: Array = []) -> Dictionary:
 	if animals.is_empty():
 		return {"id": "animal", "name": "Hayop", "color": "#c08552"}
 	var waiting: Array = []
+	var free: Array = []
 	for a in animals:
+		if a.id in busy_animal_ids:
+			continue
+		free.append(a)
 		if not progress.has_animal(biome, a.id):
 			waiting.append(a)
-	if waiting.is_empty():
-		return animals[rng.randi() % animals.size()]
 	for a in waiting:
 		if a.id != _left_animal_id:
 			return a
-	return waiting[0]
+	if not waiting.is_empty():
+		return waiting[0]
+	if not free.is_empty():
+		return free[rng.randi() % free.size()]
+	return animals[rng.randi() % animals.size()]
 
 
-## Reports one throw. Returns what the scene needs to show:
-## { correct, stage, hint_level (0, 1 or 2), coins, animal_id, new_animal, cleared }
-func answer(chosen: String) -> Dictionary:
-	var item := current
+## Reports one throw at an animal. `item`/`animal` default to the last ones picked.
+## Returns { correct, stage, hint_level (0, 1 or 2), animal_id }.
+## A correct animal is NOT in the pen yet: it follows the player until deliver() is called.
+func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}) -> Dictionary:
+	if item.is_empty():
+		item = current
+	if animal.is_empty():
+		animal = current_animal
 	var correct: bool = DRRule.clean_word(chosen) == item.answer
 	var stage: String = item.stage
 	progress.record(biome, stage, correct)
 	for entry in requeue:
 		entry.due -= 1
 
-	var result := {
-		"correct": correct, "stage": stage, "hint_level": 0, "coins": 0,
-		"animal_id": current_animal.get("id", ""), "new_animal": false, "cleared": false,
-	}
+	var result := {"correct": correct, "stage": stage, "hint_level": 0, "animal_id": animal.get("id", "")}
 	if correct:
-		progress.coins += GameConfig.COINS_PER_CORRECT
-		result.coins = GameConfig.COINS_PER_CORRECT
-		result.new_animal = progress.collect(biome, current_animal.get("id", ""))
 		_left_animal_id = ""
 	else:
 		misses[item.id] = int(misses.get(item.id, 0)) + 1
 		result.hint_level = 1 if misses[item.id] == 1 else 2
 		requeue.append({"item": item, "due": GameConfig.REQUEUE_GAP})
-		_left_animal_id = current_animal.get("id", "")
+		_left_animal_id = animal.get("id", "")
 
 	if not mixed:
 		answered_in_stage += 1
@@ -145,6 +150,16 @@ func answer(chosen: String) -> Dictionary:
 			if stage_index >= stages.size():
 				stage_index = stages.size() - 1
 				mixed = true
-
-	result.cleared = progress.biome_cleared(biome, stages, animals.size())
 	return result
+
+
+## A fed animal reached the pen: add it to the Animal Index and pay coins.
+## Returns { coins, new_animal, cleared }.
+func deliver(animal_id: String) -> Dictionary:
+	progress.coins += GameConfig.COINS_PER_CORRECT
+	var is_new := progress.collect(biome, animal_id)
+	return {
+		"coins": GameConfig.COINS_PER_CORRECT,
+		"new_animal": is_new,
+		"cleared": progress.biome_cleared(biome, stages, animals.size()),
+	}

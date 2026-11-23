@@ -10,6 +10,8 @@ var collected: Dictionary = {}
 var history: Dictionary = {}
 ## biome -> true
 var unlocked: Dictionary = {"forest": true}
+## biome -> true once the learner has finished that biome's lesson (Aralin)
+var lessons_done: Dictionary = {}
 
 
 func record(biome: String, stage: String, correct: bool) -> void:
@@ -95,7 +97,7 @@ func weakest_stage(biome: String, stages: Array) -> String:
 
 
 func to_dict() -> Dictionary:
-	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked}
+	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked, "lessons_done": lessons_done}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -103,3 +105,4 @@ func from_dict(data: Dictionary) -> void:
 	collected = data.get("collected", {})
 	history = data.get("history", {})
 	unlocked = data.get("unlocked", {"forest": true})
+	lessons_done = data.get("lessons_done", {})

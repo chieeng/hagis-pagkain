@@ -10,22 +10,25 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
 
 1. Install the Godot version above (standard build, not .NET).
 2. Clone the repo, open Godot, choose **Import**, and select `project.godot`.
-3. Press F5. You should see "Items loaded: …".
+3. Press F5. The main menu opens; **Gubat** starts the lesson the first time.
 4. Read `AGENTS.md`. It holds the team rules, and your coding assistant reads it too.
 
-## What the prototype does (Forest, din/rin)
+## What the prototype does (Forest, din/rin, 3D)
 
-- Main menu → **Gubat** [Forest]. An animal walks in and says a sentence with a blank.
-- Drag a food (**din** or **rin**) and let go to throw it.
-- Preferred form: the animal joins the pen (**Kulungan**) and you get coins.
-  Otherwise the animal walks away, the deciding last letter is highlighted with the rule,
-  and the sentence comes back later. A second miss on it shows a worked example.
-- Stages: vowel → consonant → w/y, then mixed practice on the weakest stage.
-- **Aklat ng Hayop** [Animal Index] shows the 8 Forest animals. The next biome unlocks when the
-  Index is full **and** every stage reaches 80% over its last 15 sentences.
-- Press **F3** while playing to see the per-stage accuracy (team only).
-- Not built yet: the River/Mountain/Sky biomes, audio, shop and throw power, rare/golden animals,
-  the egg bonus round, My Progress, and real art (animals and food are placeholder shapes).
+1. **Aralin [Lesson] first** (automatically the first time; replay from the menu or the in-game button):
+   look at examples → tap the last letter of words → drag words into the **rin** or **din** basket → play.
+2. **3D Forest (Pet Simulator style):** walk with the joystick (or WASD / arrow keys). Wild animals wear a
+   word tag (*Ikaw*, *Gutom*, *Masaya*). Pick a fruit in the hotbar (**rin** / **din**, keys 1 and 2) and press
+   **Ihagis** (or Space) near an animal.
+   - Preferred form: it eats, says the whole sentence and follows you. Walk into the **Kulungan** [pen]:
+     it joins the Animal Index and you get coins.
+   - Otherwise: it sniffs and walks off; a hint highlights the deciding last letter (worked example on the
+     second miss of the same sentence). The sentence comes back later on another animal. No lives, no timer.
+3. The next biome unlocks when the Index is full **and** every stage reaches 80% over its last 15 sentences.
+   Press **F3** to see per-stage accuracy (team only).
+
+Not built yet: River/Mountain/Sky, audio, shop and throw-power upgrades, rare/golden animals, the egg bonus
+round, My Progress, real art (everything is coloured boxes), and a test on a real phone.
 
 All numbers live in `core/GameConfig.gd`. All learner-facing Filipino text is in `ui/Strings.gd`
 and `core/Hints.gd`, ready for review.
@@ -36,8 +39,9 @@ and `core/Hints.gd`, ready for review.
 godot --path . -- --autoplay --nosave --shots=C:/some/folder
 ```
 
-The game plays 14 rounds by itself using simulated finger drags (including two misses, to show both hint
-levels), saves screenshots of each screen and quits. `--nosave` leaves your real save alone.
+The game goes through the lesson, then walks around the 3D forest by itself, makes 12 throws (including two
+misses on the same sentence, to show both hint levels), brings animals to the pen, saves screenshots of each
+step and quits. `--nosave` leaves your real save alone.
 
 ## Folders
 
@@ -45,8 +49,9 @@ levels), saves screenshots of each screen and quits. `--nosave` leaves your real
 |---|---|---|
 | `main/` | Entry scene | Lead |
 | `autoload/` | Global singletons: GameState, SaveManager, QuestionBank, AudioManager | see AGENTS.md |
-| `core/` | DRRule (the language rule), throwing, food items | Irish / Lead |
-| `biomes/` | BiomeTemplate (Lead) and one folder per biome (Loraine) | Lead / Loraine |
+| `core/` | Game logic with no visuals: DRRule, BiomeSession, Progress, Hints, GameConfig | Irish |
+| `world/` | 3D world: BiomeWorld, Player3D, Animal3D, Joystick, Blocky look | Lead / Alex |
+| `biomes/` | One folder per biome scene, e.g. `forest/Forest3D.tscn` (Loraine) | Loraine |
 | `ui/` | Menus, feedback popup, results | Alex |
 | `assets/` | Art and sound | Alex |
 | `data/` | Question items (JSON) | Jian |
@@ -61,7 +66,7 @@ godot --headless -s tests/run_tests.gd
 ## Sprints
 
 1. **Vertical slice:** Forest (din/rin) playable on an Android phone.
-2. **All biomes:** River, Mountain, Sky built from BiomeTemplate, plus the full question bank.
+2. **All biomes:** River, Mountain, Sky built from world/BiomeWorld.gd, plus the full question bank.
 3. **Systems:** save, badges and levels, adaptivity, play log.
 4. **Polish and pilot:** usability fixes, a small Grade 4 trial, then a frozen build.
 

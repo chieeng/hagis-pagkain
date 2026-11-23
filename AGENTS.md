@@ -1,6 +1,10 @@
 # Hagis Pagkain — rules for every coding assistant (Claude Code, Codex) and every teammate
 
-Read this whole file before changing anything. `CLAUDE.md` just points here, so there is one set of rules.
+Read this whole file before changing anything.
+
+**Design direction (professor feedback, Nov 2026):** not quiz-type and not story-type. The game teaches the
+rule first (`ui/Lesson.gd`), then the learner *uses* it in a 3D Pet Simulator world (word tags on animals,
+throw the right fruit). Do not bring back fill-in-the-blank question screens. `CLAUDE.md` just points here, so there is one set of rules.
 
 ## What this is
 
@@ -43,11 +47,11 @@ also listed in `.github/CODEOWNERS`, so GitHub asks them to review.
 
 | Member | Area | Files |
 |---|---|---|
-| Lead | Integration, core gameplay, build | `project.godot`, `main/`, `autoload/GameState.gd`, `core/ThrowController.*`, `core/FoodItem.*`, `biomes/BiomeTemplate.*`, `.github/` |
-| Loraine | Biome levels (assists Lead) | `biomes/forest/`, `biomes/river/`, `biomes/mountain/`, `biomes/sky/` |
+| Lead | Integration, core gameplay, build | `project.godot`, `main/`, `autoload/GameState.gd`, `world/BiomeWorld.gd`, `world/Player3D.gd`, `world/Animal3D.gd` (behaviour), `world/Joystick.gd`, `.github/` |
+| Loraine | Biome levels (assists Lead) | `biomes/forest/`, `biomes/river/`, `biomes/mountain/`, `biomes/sky/` (each a scene using `world/BiomeWorld.gd`) |
 | Irish | Systems | `core/DRRule.gd`, `core/BiomeSession.gd`, `core/Progress.gd`, `core/Hints.gd` (logic), `core/GameConfig.gd`, `autoload/SaveManager.gd`, `tests/` |
 | Jian | Content + QA/research | `data/`, `autoload/QuestionBank.gd`, `docs/testing/`, Filipino wording in `ui/Strings.gd` and `core/Hints.gd` |
-| Alex | UI, art, audio | `ui/` (except Strings wording), `assets/`, `autoload/AudioManager.gd` |
+| Alex | UI, art, audio | `ui/` (except Strings wording), `world/Blocky.gd` and model look, `assets/`, `autoload/AudioManager.gd` |
 
 Game logic stays in `core/BiomeSession.gd` and `core/Progress.gd`, which have no visuals and are unit-tested.
 Scenes only display it. All tunable numbers go in `core/GameConfig.gd`.
@@ -87,6 +91,6 @@ means everything passed.
 
 - Do not add internet calls, analytics, ads, accounts or a teacher dashboard.
 - Do not add dati/rati or any pair beyond the five above.
-- Do not rename the autoloads, signals or functions in `BiomeTemplate.gd` without the lead. Other people's
-  code depends on them.
+- Do not rename the autoloads, or the signals/functions in `world/BiomeWorld.gd`, `world/Animal3D.gd` and
+  `core/BiomeSession.gd`, without the lead. Other people's code depends on them.
 - Do not mass-reformat files you were not asked to touch.
