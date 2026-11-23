@@ -1,0 +1,21 @@
+# Replace each placeholder with the member's real GitHub username (e.g. @juan-dela-cruz).
+# Later lines win when patterns overlap.
+
+*                         @LEAD_USERNAME
+
+/biomes/forest/           @LORAINE_USERNAME
+/biomes/river/            @LORAINE_USERNAME
+/biomes/mountain/         @LORAINE_USERNAME
+/biomes/sky/              @LORAINE_USERNAME
+
+/core/DRRule.gd           @IRISH_USERNAME
+/autoload/SaveManager.gd  @IRISH_USERNAME
+/tests/                   @IRISH_USERNAME
+
+/data/                    @JIAN_USERNAME
+/autoload/QuestionBank.gd @JIAN_USERNAME
+/docs/testing/            @JIAN_USERNAME
+
+/ui/                      @ALEX_USERNAME
+/assets/                  @ALEX_USERNAME
+/autoload/AudioManager.gd @ALEX_USERNAME

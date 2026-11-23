@@ -1,0 +1,35 @@
+[
+	{
+		"id": "forest-001",
+		"biome": "forest",
+		"pair": "din/rin",
+		"sentence": "Masaya ___ ako.",
+		"prev_word": "Masaya",
+		"answer": "rin",
+		"translation": "I am happy too.",
+		"status": "draft",
+		"note": "Sample placeholder from the proposal examples. Jian replaces after KWF/adviser check."
+	},
+	{
+		"id": "forest-002",
+		"biome": "forest",
+		"pair": "din/rin",
+		"sentence": "Pinsan ___ ni Ana si Ben.",
+		"prev_word": "Pinsan",
+		"answer": "din",
+		"translation": "Ben is also Ana's cousin.",
+		"status": "draft",
+		"note": "Sample placeholder. Consonant ending keeps d."
+	},
+	{
+		"id": "forest-003",
+		"biome": "forest",
+		"pair": "din/rin",
+		"sentence": "Mura ___ ang mangga.",
+		"prev_word": "Mura",
+		"answer": "din",
+		"translation": "The mango is also cheap.",
+		"status": "draft",
+		"note": "Sample placeholder. KWF exception -ra keeps d."
+	}
+]

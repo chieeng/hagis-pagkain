@@ -1,0 +1,36 @@
+; Engine configuration file.
+; Owner: Lead. Change autoloads/settings only through a PR the lead reviews.
+
+config_version=5
+
+[application]
+
+config/name="Hagis Pagkain"
+config/description="Offline Grade 4 game for d-r alternation in Filipino (din/rin, daw/raw, dito/rito, diyan/riyan, doon/roon)."
+run/main_scene="res://main/Main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[autoload]
+
+QuestionBank="*res://autoload/QuestionBank.gd"
+GameState="*res://autoload/GameState.gd"
+SaveManager="*res://autoload/SaveManager.gd"
+AudioManager="*res://autoload/AudioManager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=0
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

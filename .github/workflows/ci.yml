@@ -1,0 +1,48 @@
+# Runs on every PR and every push to main. A PR can only merge when this passes.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.7.2   # keep in sync with README.md and android.yml
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot
+        run: |
+          if [ ! -f ~/godot/godot ]; then
+            mkdir -p ~/godot && cd ~/godot
+            curl -fsSL -o g.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            unzip -q g.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot && rm g.zip
+          fi
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Import project (also catches GDScript parse errors)
+        run: |
+          godot --headless --import 2>&1 | tee import.log
+          if grep -E "SCRIPT ERROR|Parse Error" import.log; then
+            echo "::error::A GDScript file has errors. See the lines above."
+            exit 1
+          fi
+
+      - name: Run tests (DRRule + every item in data/)
+        run: |
+          set +e
+          godot --headless -s tests/run_tests.gd 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          set -e
+          grep -q " passed, 0 failed" test.log || { echo "::error::Tests failed or did not run."; exit 1; }
+          exit $status

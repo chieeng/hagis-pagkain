@@ -1,0 +1,15 @@
+# Godot
+.godot/
+*.translation
+/build/
+/android/
+
+# Secrets
+*.keystore
+*.jks
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

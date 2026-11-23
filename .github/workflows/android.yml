@@ -1,0 +1,94 @@
+# Builds a debug APK you can install on a phone.
+# Run it from the Actions tab ("Run workflow"), or push a tag like v0.1.0 to also make a GitHub Release.
+# Needs export_presets.cfg with a preset named exactly "Android" (the lead creates it once in the editor).
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+env:
+  GODOT_VERSION: 4.7.2   # keep in sync with README.md and ci.yml
+
+permissions:
+  contents: write   # needed to attach the APK to a Release on tags
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check export preset exists
+        run: |
+          if ! grep -q 'name="Android"' export_presets.cfg 2>/dev/null; then
+            echo "::error::No export preset named \"Android\". Lead: in Godot, Project > Export > Add > Android, name it Android, save, commit export_presets.cfg."
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Cache Godot and export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-android-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot and export templates
+        run: |
+          if [ ! -f ~/godot/godot ]; then
+            mkdir -p ~/godot && cd ~/godot
+            curl -fsSL -o g.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            unzip -q g.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot && rm g.zip
+          fi
+          TPL=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          if [ ! -d "$TPL" ]; then
+            mkdir -p "$TPL" && cd /tmp
+            curl -fsSL -o t.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            unzip -q t.tpz && mv templates/* "$TPL/" && rm -rf t.tpz templates
+          fi
+          echo "$HOME/godot" >> "$GITHUB_PATH"
+
+      - name: Configure Android SDK, JDK and debug keystore
+        run: |
+          keytool -genkeypair -v -keystore "$HOME/debug.keystore" -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          MINOR=$(echo "$GODOT_VERSION" | cut -d. -f1,2)
+          mkdir -p ~/.config/godot
+          for f in "editor_settings-${MINOR}.tres" "editor_settings-4.tres"; do
+            cat > ~/.config/godot/$f <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          EOF
+            sed -i 's/^          //' ~/.config/godot/$f
+          done
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$HOME/debug.keystore" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
+
+      - name: Export debug APK
+        run: |
+          godot --headless --import
+          mkdir -p build
+          godot --headless --export-debug "Android" build/hagis-pagkain-debug.apk
+          test -f build/hagis-pagkain-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hagis-pagkain-debug-apk
+          path: build/hagis-pagkain-debug.apk
+
+      - name: Attach APK to a Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/hagis-pagkain-debug.apk --title "$GITHUB_REF_NAME" --notes "Debug build for testing." --prerelease
