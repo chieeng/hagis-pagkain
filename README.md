@@ -13,7 +13,7 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
 3. Press F5. The main menu opens; **Gubat** starts the game. There is no lesson screen: the game teaches as you play.
 4. Read `AGENTS.md`. It holds the team rules, and your coding assistant reads it too.
 
-## What the prototype does (Forest, din/rin, 3D)
+## What the prototype does (all five biomes, 3D)
 
 1. **Learning inside the game (no lesson screen).**
    - The **deciding last letter** on each word tag glows in the colour of its fruit: pink for **rin**, orange
@@ -45,10 +45,24 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
      pillar visible across the map. Releasing in the middle of the green band gives **PERPEKTO!** [PERFECT!]
      and bonus coins. Thrill comes from skill and correct answers, never from random luck.
    - Sounds are simple placeholder tones made in code (`autoload/AudioManager.gd`) until real sounds exist.
-3. The next biome unlocks when the Index is full **and** every stage reaches 80% over its last 15 sentences.
-   Press **F3** to see per-stage accuracy (team only).
+3. **All five biomes** are playable: Gubat (din/rin) → Ilog (daw/raw) → Bundok (dito/rito, diyan/riyan) →
+   Himpapawid (doon/roon + the KWF exceptions) → Isla (mixed review of everything; placeholder name).
+   - The game opens on a **biome-select screen** showing progress per biome (animals caught, sentences
+     answered); any open biome can be replayed, and locked biomes say what is still needed.
+   - **From Ilog on, three fruit words** are offered (e.g., *din, rin, raw*), so the learner must also pick
+     the right word; Isla goes back to each animal's own pair.
+   - About **30% of each biome's sentences review earlier biomes** (spiral review).
+   - In Himpapawid, the **exception stage (-ra, -ri, -raw, -ray → d)** appears only after 80% on the three
+     regular stages.
+   - The next biome unlocks when the Index is full **and** every regular stage reaches 80% over its last
+     15 sentences. Press **F3** to see per-stage accuracy (team only).
+4. **Aking Pag-unlad** [My Progress]: the learner's accuracy per pair and per context, plus the sentences
+   to review next (recent misses; they leave the list once answered right).
 
-Not built yet: River/Mountain/Sky, audio, the egg bonus round, coins from pen animals over time, My Progress, real art (everything is coloured boxes), and a test on a real phone.
+Not built yet: recorded audio (device TTS is used instead), two-blank golden Sky sentences, the egg bonus
+round, coins from pen animals over time, pen decorating, real art (everything is coloured boxes), and a
+test on a real phone. All new sentence items are `status: "draft"` until Jian and the adviser approve them.
+See `docs/SRS.md` and `docs/SDD.md` for the full requirements and design.
 
 All numbers live in `core/GameConfig.gd`. All learner-facing Filipino text is in `ui/Strings.gd`
 and `core/Hints.gd`, ready for review.
@@ -59,9 +73,10 @@ and `core/Hints.gd`, ready for review.
 godot --path . -- --autoplay --nosave --shots=C:/some/folder
 ```
 
-The game opens the 3D forest and walks around it by itself, makes 12 throws (including two
+The game opens the 3D forest and walks around it by itself, makes throws (including two
 misses on the same sentence, to show both hint levels), brings animals to the pen, saves screenshots of each
-step and quits. `--nosave` leaves your real save alone.
+step and quits. `--nosave` leaves your real save alone. Add `--biome=river` (or mountain/sky/island) to
+check another biome.
 
 ## Folders
 
@@ -92,10 +107,8 @@ godot --headless -s tests/run_tests.gd
 
 ## Android export
 
-The lead does this once: in Godot, open **Project → Export → Add… → Android** and name the preset exactly
-`Android`. Save, then commit `export_presets.cfg`. It holds no passwords.
-
-After that, anyone can get an APK:
+`export_presets.cfg` with the `Android` preset is already committed (it holds no passwords).
+Anyone can get an APK:
 - **Actions tab → Android APK → Run workflow**, then download the APK from the run's Artifacts.
 - Or push a tag (`git tag v0.1.0 && git push origin v0.1.0`). This also creates a GitHub Release with the APK attached.
 
