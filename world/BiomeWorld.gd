@@ -33,8 +33,8 @@ const THEMES := {
 		"tree_a": "#2f9e44", "tree_b": "#63e6be", "trunk": "#a07850", "hedge": "#0ca678", "water": "#339af0"},
 	"mountain": {"sky_top": "#748ffc", "sky_horizon": "#e5dbff", "ground": "#a9b388",
 		"tree_a": "#5c940d", "tree_b": "#868e96", "trunk": "#6f4e37", "hedge": "#495057", "water": ""},
-	"sky": {"sky_top": "#9775fa", "sky_horizon": "#fff0f6", "ground": "#e9ecef",
-		"tree_a": "#f8f9fa", "tree_b": "#dee2e6", "trunk": "#ced4da", "hedge": "#b197fc", "water": ""},
+	"sky": {"sky_top": "#5f3dc4", "sky_horizon": "#d0ebff", "ground": "#91a7ff",
+		"tree_a": "#f8f9fa", "tree_b": "#e599f7", "trunk": "#b197fc", "hedge": "#845ef7", "water": ""},
 	"island": {"sky_top": "#22b8cf", "sky_horizon": "#fff9db", "ground": "#ffe8a1",
 		"tree_a": "#37b24d", "tree_b": "#94d82d", "trunk": "#b08968", "hedge": "#1098ad", "water": "#15aabf"},
 }
