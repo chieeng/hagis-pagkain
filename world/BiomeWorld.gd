@@ -22,8 +22,9 @@ const PEN_CENTER := Vector3(-10, 0, 12)
 const PEN_HALF := 4.0
 const PLAYER_START := Vector3(0, 0, 9)
 const MAP_HALF := 28.0
-const CAMERA_OFFSET := Vector3(0, 11, 11)
-const WORD_COLORS := [Color("#e64980"), Color("#f08c00"), Color("#7950f2")]
+const CAMERA_OFFSET := Vector3(0, 12, 9.5)
+## Fruit word colours: [r-form, d-form, third choice]. They match the glowing letters on the tags.
+const WORD_COLORS := [Color(GameConfig.R_COLOR), Color(GameConfig.D_COLOR), Color("#7950f2")]
 const AUTOPLAY_THROWS := 18
 
 var session: BiomeSession
@@ -68,6 +69,15 @@ var debug_label: Label
 var speed_lines: SpeedLines
 var flash: ColorRect
 var distance_label: Label
+var sentence_banner: PanelContainer   ## the aimed animal's sentence with a blank (proposal core loop step 2)
+var sentence_label: RichTextLabel
+var listen_button: Button
+var _banner_item_id := ""
+var _tts_voice := ""
+var intro_panel: PanelContainer   ## "new kind of animal" teaching moment
+var intro_box: VBoxContainer
+var _intro_token := 0
+var _trees: Array[Node3D] = []        ## faded when they stand between the camera and the action
 
 # Autoplay
 var autoplay := DebugTools.has_arg("--autoplay")
@@ -100,6 +110,8 @@ func _ready() -> void:
 	_aim_ring = Blocky.cylinder(self, 1.1, 0.06, Color("#ff922b"), Vector3.ZERO)
 	_aim_ring.visible = false
 	_build_ui()
+	_tts_voice = _find_voice()
+	listen_button.visible = _tts_voice != ""
 	for animal_id in GameState.progress.collected.get(biome, []):
 		_spawn_in_pen(animal_id)
 	if session.items.is_empty():
@@ -181,6 +193,7 @@ func _tree(p: Vector3, rng: RandomNumberGenerator) -> void:
 	var t := StaticBody3D.new()
 	add_child(t)
 	t.position = p
+	_trees.append(t)
 	var shape := CollisionShape3D.new()
 	var cyl := CylinderShape3D.new()
 	cyl.radius = 0.6
@@ -215,7 +228,7 @@ func _build_pen() -> void:
 	Blocky.box(self, Vector3(0.12, 0.15, h * 2), wood, PEN_CENTER + Vector3(-h, 0.8, 0))
 	Blocky.box(self, Vector3(0.12, 0.15, h - 1.2), wood, PEN_CENTER + Vector3(h, 0.8, -h / 2.0 - 0.6))
 	Blocky.box(self, Vector3(0.12, 0.15, h - 1.2), wood, PEN_CENTER + Vector3(h, 0.8, h / 2.0 + 0.6))
-	Blocky.label3d(self, Strings.PEN, PEN_CENTER + Vector3(0, 2.6, -h), 90, Color("#ffe066"))
+	Blocky.label3d(self, Strings.PEN, PEN_CENTER + Vector3(h - 0.5, 2.8, -1.0), 80, Color("#ffe066"))
 
 
 func _pen_rect() -> Rect2:
@@ -233,6 +246,8 @@ func _new_animal(data: Dictionary, item: Dictionary, state: Animal3D.State, rari
 	var a := Animal3D.new()
 	a.pen_area = _pen_rect()
 	a.wander_area = Rect2(-MAP_HALF + 2, -MAP_HALF + 2, MAP_HALF * 2 - 4, MAP_HALF + 4)
+	if not item.is_empty():
+		a.help = GameState.progress.help_level(biome, str(item.get("stage", "")))
 	a.setup(data, item, state, rarity)
 	a.player = player
 	a.arrived_in_pen.connect(_on_arrived_in_pen)
@@ -305,6 +320,9 @@ func _process(delta: float) -> void:
 	player.global_position.z = clamp(player.global_position.z, -MAP_HALF, MAP_HALF)
 	_place_camera(delta * 5.0)
 	_update_aim(delta)
+	_update_banner()
+	_fade_trees(delta)
+	_fit_tags()
 
 	if not followers.is_empty() and _pen_rect().grow(1.0).has_point(Vector2(player.global_position.x, player.global_position.z)):
 		for f in followers:
@@ -555,9 +573,61 @@ func _resolve(target: Animal3D, fruit: String, perfect: bool = false) -> void:
 		var exit := Vector3(target.global_position.x, 0, -MAP_HALF - 4)
 		target.sniff(exit)
 		_show_hint(target.item, r.hint_level)
+	_refresh_help()
 	SaveManager.save_game()
 	_refresh_hud()
 	await get_tree().create_timer(0.9).timeout
+
+
+## Every wild animal's letter glow follows its stage's help level (fades with skill, back after a miss).
+func _refresh_help() -> void:
+	for a in animals:
+		if is_instance_valid(a) and a.is_wild():
+			a.set_help(GameState.progress.help_level(biome, str(a.item.get("stage", ""))))
+
+
+## The first time a learner aims at a kind of animal (a stage of the rule), the game teaches it right
+## there: the word with its glowing letter, the fruit it takes, and the rule in one line.
+func _introduce_stage(item: Dictionary) -> void:
+	var stage := str(item.get("stage", ""))
+	if stage == "" or GameState.progress.has_met_stage(biome, stage):
+		return
+	var first: bool = GameState.progress.help.get(biome, {}).is_empty()
+	GameState.progress.meet_stage(biome, stage)
+	var word := str(item.get("prev_word", ""))
+	var n: int = min(DRRule.deciding_length(word), word.length())
+	var takes_r := DRRule.takes_r(word)
+	var c: String = (GameConfig.R_COLOR if takes_r else GameConfig.D_COLOR).trim_prefix("#")
+	var answer := str(item.get("answer", ""))
+	var fruit := DRRule.r_form(answer) if takes_r else DRRule.d_form(answer)
+	for ch in intro_box.get_children():
+		intro_box.remove_child(ch)
+		ch.queue_free()
+	var title := UiKit.label(Strings.FIRST_KIND if first else Strings.NEW_KIND, 30, Color("#0b7285"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	intro_box.add_child(title)
+	var ex := UiKit.rich(44, 620)
+	ex.text = "[center]%s[color=#%s][b]%s[/b][/color]   →   [color=#%s][b]%s[/b][/color][/center]" % [
+		word.left(word.length() - n), c, word.right(n), c, fruit]
+	intro_box.add_child(ex)
+	var rule := UiKit.rich(26, 620)
+	rule.text = "[center]%s[/center]" % Hints.rule_line(word)
+	intro_box.add_child(rule)
+	intro_panel.visible = true
+	intro_panel.reset_size()
+	intro_panel.call_deferred("reset_size")
+	intro_panel.pivot_offset = Vector2(330, 60)
+	intro_panel.scale = Vector2.ONE * 0.4
+	create_tween().tween_property(intro_panel, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	AudioManager.play("rare")
+	SaveManager.save_game()
+	if autoplay:
+		_bot_snap_later("13_new_kind_%s" % stage, 0.4)
+	_intro_token += 1
+	var token := _intro_token
+	await get_tree().create_timer(5.0 if not autoplay else 1.5).timeout
+	if token == _intro_token:
+		intro_panel.visible = false
 
 
 ## The big reveal after a correct throw. Bigger for rarer animals.
@@ -637,9 +707,35 @@ func _build_ui() -> void:
 	distance_label.add_theme_color_override("font_outline_color", Color("#1971c2"))
 	distance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	distance_label.size = Vector2(1280, 90)
-	distance_label.position = Vector2(0, 380)
+	distance_label.position = Vector2(0, 290)
 	distance_label.visible = false
 	ui.add_child(distance_label)
+
+	# Sentence with a blank for the animal being aimed at (read aloud when a voice exists).
+	sentence_banner = UiKit.panel(Color("#fff9db"), 20)
+	sentence_banner.position = Vector2(300, 426)   # just above the word buttons, so targets ahead stay visible
+	sentence_banner.custom_minimum_size = Vector2(680, 0)
+	sentence_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	sentence_banner.add_child(row)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(col)
+	sentence_label = UiKit.rich(38, 520)
+	col.add_child(sentence_label)
+	var prompt := UiKit.label(Strings.SENTENCE_PROMPT, 18, Color("#495057"))
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(prompt)
+	listen_button = UiKit.button(Strings.LISTEN, 20, Color("#1971c2"))
+	listen_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	listen_button.pressed.connect(func() -> void:
+		if _aim != null and is_instance_valid(_aim):
+			_speak(_aim.item))
+	row.add_child(listen_button)
+	sentence_banner.visible = false
+	ui.add_child(sentence_banner)
 
 	var back := UiKit.button(Strings.BACK, 24, Color("#495057"))
 	back.position = Vector2(16, 14)
@@ -664,10 +760,6 @@ func _build_ui() -> void:
 	shop_button.pressed.connect(func() -> void: shop.open())
 	ui.add_child(shop_button)
 
-	var lesson := UiKit.button(Strings.LESSON, 24, Color("#0b7285"))
-	lesson.position = Vector2(1140, 14)
-	lesson.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://ui/Lesson.tscn"))
-	ui.add_child(lesson)
 
 	combo_label = UiKit.label("", 44, Color("#ffd43b"), 14)
 	combo_label.add_theme_color_override("font_outline_color", Color("#c92a2a"))
@@ -721,7 +813,7 @@ func _build_ui() -> void:
 	toast.add_theme_color_override("font_outline_color", Color("#2b8a3e"))
 	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast.size = Vector2(1280, 70)
-	toast.position = Vector2(0, 440)
+	toast.position = Vector2(0, 200)
 	toast.visible = false
 	ui.add_child(toast)
 
@@ -734,6 +826,16 @@ func _build_ui() -> void:
 	catch_panel.visible = false
 	catch_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(catch_panel)
+
+	intro_panel = UiKit.panel(Color("#e3fafc"), 22)
+	intro_panel.position = Vector2(310, 84)
+	intro_panel.custom_minimum_size = Vector2(660, 0)
+	intro_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	intro_box = VBoxContainer.new()
+	intro_box.add_theme_constant_override("separation", 4)
+	intro_panel.add_child(intro_box)
+	intro_panel.visible = false
+	ui.add_child(intro_panel)
 
 	hint_panel = UiKit.panel()
 	hint_panel.position = Vector2(250, 96)
@@ -784,6 +886,92 @@ func _refresh_hud() -> void:
 			GameState.progress.stage_window(biome, s).size(), "OK" if GameState.progress.stage_met(biome, s) else ""])
 	lines.append("mode: %s · streak %d" % ["mixed" if session.mixed else "stage %d" % (session.stage_index + 1), session.streak])
 	debug_label.text = "\n".join(lines)
+
+
+## Shows the aimed animal's sentence with the blank. The blank shows the word in the learner's hand,
+## so picking a fruit = filling the blank; throwing it = answering.
+func _update_banner() -> void:
+	if catch_panel.visible or hint_panel.visible or (not _throwing and (_aim == null or not is_instance_valid(_aim))):
+		sentence_banner.visible = false
+		if not _throwing:
+			_banner_item_id = ""
+		return
+	if _throwing:
+		return   # keep the sentence that was just answered on screen while the fruit flies
+	var item: Dictionary = _aim.item
+	var key := "%s|%s" % [item.get("id", ""), selected_fruit]
+	if sentence_label.get_meta("key", "") != key or not sentence_banner.visible:
+		sentence_label.set_meta("key", key)
+		var fill := "_____"
+		if selected_fruit != "":
+			var c: Color = WORD_COLORS[max(fruits.find(selected_fruit), 0) % WORD_COLORS.size()]
+			fill = "[u][b][color=#%s]%s[/color][/b][/u][color=#868e96]?[/color]" % [c.to_html(false), selected_fruit]
+		sentence_label.text = "[center]%s[/center]" % str(item.get("sentence", "")).replace("___", fill)
+		sentence_banner.visible = true
+		sentence_banner.reset_size()
+	if item.get("id", "") != _banner_item_id:
+		_banner_item_id = item.get("id", "")
+		_speak(item)
+		_introduce_stage(item)
+
+
+## A Filipino text-to-speech voice, if the phone has one ("" = none: the Listen button hides).
+func _find_voice() -> String:
+	if DisplayServer.get_name() == "headless" or not ProjectSettings.get_setting("audio/general/text_to_speech", false):
+		return ""
+	for lang in ["fil", "tl"]:
+		var voices := DisplayServer.tts_get_voices_for_language(lang)
+		if not voices.is_empty():
+			return voices[0]
+	return ""
+
+
+func _speak(item: Dictionary) -> void:
+	if _tts_voice == "":
+		return
+	DisplayServer.tts_stop()
+	DisplayServer.tts_speak(str(item.get("sentence", "")).replace("___", "..."), _tts_voice)
+
+
+## Trees between the camera and the player or the aimed animal turn see-through.
+func _fade_trees(delta: float) -> void:
+	var spots: Array[Vector3] = [player.global_position]
+	if _aim != null and is_instance_valid(_aim):
+		spots.append(_aim.global_position)
+	for t in _trees:
+		var blocking := false
+		for p in spots:
+			var dz := t.position.z - p.z
+			if dz > -1.0 and dz < 4.5 and absf(t.position.x - p.x) < 2.2:
+				blocking = true
+		var want := 0.25 if blocking else 1.0
+		var cur: float = t.get_meta("alpha", 1.0)
+		if is_equal_approx(cur, want):
+			continue
+		cur = move_toward(cur, want, delta * 4.0)
+		t.set_meta("alpha", cur)
+		for c in t.get_children():
+			var mi := c as MeshInstance3D
+			if mi == null:
+				continue
+			if not mi.has_meta("solid"):
+				mi.set_meta("solid", mi.material_override)
+				var fm: StandardMaterial3D = (mi.material_override as StandardMaterial3D).duplicate()
+				fm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				mi.set_meta("faded", fm)
+			var faded: StandardMaterial3D = mi.get_meta("faded")
+			faded.albedo_color.a = cur
+			mi.material_override = mi.get_meta("solid") if cur >= 0.999 else faded
+
+
+## Word tags fade out before they slide under the top buttons.
+func _fit_tags() -> void:
+	var top := 80.0   # below the top buttons
+	for a in animals:
+		if not is_instance_valid(a) or not a.is_inside_tree():
+			continue
+		var p := camera.unproject_position(a.global_position + Vector3(0, 2.6, 0))
+		a.set_tag_alpha(clampf((p.y - top) / 40.0, 0.0, 1.0))
 
 
 ## "NAHULI MO!" popup after a correct throw: animal, rarity, the whole sentence, coins.

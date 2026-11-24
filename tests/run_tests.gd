@@ -78,10 +78,12 @@ func test_stage_and_highlight() -> void:
 	check("deciding_length ikaw", Rule.deciding_length("ikaw"), 1)
 	check("deciding_length mura", Rule.deciding_length("mura"), 2)
 	check("deciding_length araw", Rule.deciding_length("araw"), 3)
-	check("highlight Ikaw", Hints.highlight_word("Ikaw"), "Ika[color=%s][b]w[/b][/color]" % Hints.HIGHLIGHT)
+	check("highlight Ikaw", Hints.highlight_word("Ikaw"), "Ika[color=%s][b]w[/b][/color]" % GameConfig.R_COLOR)
+	check("highlight colour for d", Hints.letter_color("Gutom"), GameConfig.D_COLOR)
+	check("highlight colour for exception", Hints.letter_color("mura"), GameConfig.D_COLOR)
 	var item := {"sentence": "Ikaw ___ ang taya.", "prev_word": "Ikaw", "answer": "rin"}
 	check("highlighted sentence", Hints.highlighted_sentence(item),
-		"Ika[color=%s][b]w[/b][/color] ___ ang taya." % Hints.HIGHLIGHT)
+		"Ika[color=%s][b]w[/b][/color] ___ ang taya." % GameConfig.R_COLOR)
 	check("worked example lines", Hints.worked_example(item).size(), 3)
 	check("worked example ends with answer", Hints.worked_example(item)[2].contains("[b]rin[/b]"), true)
 	for s in ["vowel", "consonant", "wy", "exception"]:
@@ -131,9 +133,24 @@ func test_progress() -> void:
 	check("collect again", p.collect("forest", "ibon"), false)
 	check("index not complete", p.index_complete("forest", 8), false)
 	check("weakest is an unpractised stage", p.weakest_stage("forest", ["vowel", "consonant"]), "consonant")
+	# Learning inside the game: the letter glow fades with correct throws and comes back after a miss.
+	check("new stage not met", p.has_met_stage("forest", "wy"), false)
+	check("glow starts full", p.help_level("forest", "wy"), 1.0)
+	p.meet_stage("forest", "wy")
+	check("stage met", p.has_met_stage("forest", "wy"), true)
+	check("meeting keeps full glow", p.help_level("forest", "wy"), 1.0)
+	for i in 3:
+		p.update_help("forest", "wy", true)
+	check("glow fades with correct throws", p.help_level("forest", "wy"), 1.0 - 3 * GameConfig.HELP_FADE_STEP)
+	for i in 5:
+		p.update_help("forest", "wy", true)
+	check("glow stops at 0", p.help_level("forest", "wy"), 0.0)
+	p.update_help("forest", "wy", false)
+	check("a miss brings the glow back", p.help_level("forest", "wy"), GameConfig.HELP_ON_MISS)
 	var copy := Progress.new()
 	copy.from_dict(JSON.parse_string(JSON.stringify(p.to_dict())))
 	check("save round trip", copy.collected_count("forest"), 1)
+	check("help saved", copy.help_level("forest", "wy"), GameConfig.HELP_ON_MISS)
 	finished += 1
 
 

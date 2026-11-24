@@ -36,10 +36,6 @@ func _ready() -> void:
 	bottom.alignment = BoxContainer.ALIGNMENT_CENTER
 	bottom.add_theme_constant_override("separation", 30)
 	vb.add_child(bottom)
-	var lesson := UiKit.button(Strings.LESSON, 32, Color("#0b7285"))
-	lesson.custom_minimum_size = Vector2(220, 76)
-	lesson.pressed.connect(func() -> void: get_tree().change_scene_to_file(GameState.LESSON_SCENE))
-	bottom.add_child(lesson)
 	var pen := UiKit.button(Strings.PEN, 32, Color("#9c36b5"))
 	pen.custom_minimum_size = Vector2(260, 76)
 	pen.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://ui/Pen.tscn"))
@@ -50,7 +46,7 @@ func _ready() -> void:
 
 	if DebugTools.has_arg("--autoplay"):
 		await DebugTools.snap(self, "01_main")
-		get_tree().change_scene_to_file(GameState.LESSON_SCENE)
+		get_tree().change_scene_to_file(GameState.BIOME_SCENES["forest"])
 
 
 func _biome_card(biome: String) -> Button:
@@ -66,8 +62,6 @@ func _biome_card(biome: String) -> Button:
 	b.custom_minimum_size = Vector2(250, 190)
 	b.disabled = not (open and built)
 	if open and built:
-		b.pressed.connect(func() -> void:
-			# The lesson comes first the first time.
-			var first_time: bool = not GameState.progress.lessons_done.get(biome, false)
-			get_tree().change_scene_to_file(GameState.LESSON_SCENE if first_time else GameState.BIOME_SCENES[biome]))
+		# No lesson screen first: the rule is taught inside the game (glowing letters that fade with skill).
+		b.pressed.connect(func() -> void: get_tree().change_scene_to_file(GameState.BIOME_SCENES[biome]))
 	return b

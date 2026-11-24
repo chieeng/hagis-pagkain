@@ -1,6 +1,8 @@
 class_name Animal3D
 extends Node3D
 ## A blocky animal in the 3D world, wearing the word tag of its sentence (the word before din/rin).
+## The deciding last letter of the tag glows in its fruit's colour; `help` (0..1) sets how strongly,
+## so the learner first sees the pattern, then has to read the letter alone.
 ## States:
 ##   WILD     wanders the forest; stops and looks at the player when they come close
 ##   FOLLOW   was fed the preferred form; follows the player
@@ -27,11 +29,13 @@ var pen_area := Rect2(-14, 8, 8, 8)
 var follow_target: Node3D
 var follow_slot := 0
 var player: Node3D
+var help := 1.0                ## 0..1 glow of the deciding letter (Progress.help_level)
 
 var _target := Vector3.ZERO
 var _pause := 0.0
 var _model: Node3D
 var _tag: Label3D
+var _tag_end: Label3D          ## the deciding last letter (or last syllable for KWF exceptions)
 var _speech: Label3D
 var _busy := false   ## playing an eat/sniff animation
 
@@ -72,7 +76,10 @@ func setup(p_data: Dictionary, p_item: Dictionary, p_state: State = State.WILD, 
 			Blocky.box(_model, Vector3(0.2, 0.45, 0.2), color.darkened(0.25), Vector3(x, 0.22, z))
 	Blocky.box(_model, Vector3(0.15, 0.15, 0.35), color.darkened(0.1), Vector3(0, 0.95, -0.7))
 
-	_tag = Blocky.label3d(self, "", Vector3(0, 2.45, 0), 72)
+	_tag = Blocky.label3d(self, "", Vector3(0, 2.1, 0), 72)
+	_tag_end = Blocky.label3d(self, "", Vector3(0, 2.1, 0), 72)
+	for l: Label3D in [_tag, _tag_end]:
+		l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM   # bottoms line up when the letter is bigger
 	_speech = Blocky.label3d(self, "", Vector3(0, 3.2, 0), 54, Color("#d3f9d8"))
 	_speech.outline_modulate = Color("#2b8a3e")
 	_refresh_tag()
@@ -82,16 +89,61 @@ func setup(p_data: Dictionary, p_item: Dictionary, p_state: State = State.WILD, 
 func _refresh_tag() -> void:
 	match state:
 		State.WILD:
-			_tag.text = str(item.get("prev_word", ""))
-			_tag.modulate = Color.WHITE
+			_word_tag(Color.WHITE)
+		State.LEAVING:
+			_word_tag(Color("#ffa8a8"))
 		State.FOLLOW, State.TO_PEN, State.IN_PEN:
 			_tag.text = str(data.get("name", ""))
 			_tag.modulate = Color("#ffe066")
 			_tag.font_size = 40
-			_tag.position.y = 2.1
-		State.LEAVING:
-			_tag.text = str(item.get("prev_word", ""))
-			_tag.modulate = Color("#ffa8a8")
+			_tag.position = Vector3(0, 1.85, 0)
+			_tag_end.text = ""
+
+
+## "Masaya" -> "Masay" + a glowing "a". The glow colour matches the fruit that completes the sentence.
+func _word_tag(base: Color) -> void:
+	var word := str(item.get("prev_word", ""))
+	var n: int = min(DRRule.deciding_length(word), word.length())
+	var stem := word.left(word.length() - n)
+	var end := word.right(n)
+	var glow := Color(GameConfig.R_COLOR if DRRule.takes_r(word) else GameConfig.D_COLOR)
+	_tag.text = stem
+	_tag.modulate = base
+	_tag_end.text = end
+	_tag_end.font_size = 72 + int(round(28.0 * help))
+	_tag_end.modulate = base.lerp(glow, help)
+	# Place the two labels side by side (the root never rotates, so local x = screen right).
+	var font: Font = _tag.font if _tag.font != null else ThemeDB.fallback_font
+	var w1 := font.get_string_size(stem, HORIZONTAL_ALIGNMENT_LEFT, -1, _tag.font_size).x * _tag.pixel_size
+	var w2 := font.get_string_size(end, HORIZONTAL_ALIGNMENT_LEFT, -1, _tag_end.font_size).x * _tag_end.pixel_size
+	var total := w1 + w2
+	_tag.position = Vector3(-total / 2.0 + w1 / 2.0, 2.1, 0)
+	_tag_end.position = Vector3(total / 2.0 - w2 / 2.0, 2.1, 0)
+
+
+func set_help(h: float) -> void:
+	help = clampf(h, 0.0, 1.0)
+	if state == State.WILD or state == State.LEAVING:
+		_refresh_tag()
+
+
+## After a miss: the deciding letter jumps a few times ("look here!").
+func blink_letter() -> void:
+	var t := create_tween()
+	for i in 3:
+		t.tween_property(_tag_end, "scale", Vector3.ONE * 1.6, 0.15)
+		t.tween_property(_tag_end, "scale", Vector3.ONE, 0.2)
+
+
+## 0..1, so the world can fade a tag that would hide under the HUD.
+func set_tag_alpha(a: float) -> void:
+	for l: Label3D in [_tag, _tag_end, _speech]:
+		l.modulate.a = a
+		l.outline_modulate.a = 0.9 * a
+	var badge := get_node_or_null("Badge") as Label3D
+	if badge != null:
+		badge.modulate.a = a
+		badge.outline_modulate.a = 0.9 * a
 
 
 func is_wild() -> bool:
@@ -221,7 +273,9 @@ func eat(target: Node3D, slot: int) -> void:
 func sniff(exit_point: Vector3) -> void:
 	_busy = true
 	state = State.LEAVING
+	help = 1.0   # show the deciding letter in full colour as it leaves
 	_refresh_tag()
+	blink_letter()
 	var t := create_tween()
 	for a in [0.4, -0.4, 0.3, -0.3, 0.0]:
 		t.tween_property(_model, "rotation:z", a * 0.5, 0.1)

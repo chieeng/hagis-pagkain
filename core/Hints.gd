@@ -5,7 +5,9 @@ extends RefCounted
 ##   Level 2 (second miss on the same sentence): a worked example.
 ## Owner: Irish (logic). Filipino wording: Jian + adviser review. Never use "mali" [wrong].
 
-const HIGHLIGHT := "#d9480f"
+## The deciding letter is shown in the colour of the fruit it takes (the same glow as on the word tags).
+static func letter_color(prev_word: String) -> String:
+	return GameConfig.R_COLOR if DRRule.takes_r(prev_word) else GameConfig.D_COLOR
 
 ## English for the team: vowel -> r | w or y -> r | consonant -> d | -ra, -ri, -raw, -ray -> d
 const RULE_LINES := {
@@ -30,7 +32,7 @@ static func title(prev_word: String) -> String:
 ## "ikaw" -> "ika[color][b]w[/b][/color]"
 static func highlight_word(word: String) -> String:
 	var n: int = min(DRRule.deciding_length(word), word.length())
-	return "%s[color=%s][b]%s[/b][/color]" % [word.left(word.length() - n), HIGHLIGHT, word.right(n)]
+	return "%s[color=%s][b]%s[/b][/color]" % [word.left(word.length() - n), letter_color(word), word.right(n)]
 
 
 ## The sentence with prev_word highlighted and the blank replaced by `fill`.
@@ -50,7 +52,7 @@ static func worked_example(item: Dictionary) -> Array[String]:
 	var n: int = min(DRRule.deciding_length(prev), prev.length())
 	var unit := "pantig" if DRRule.stage(prev) == "exception" else "titik"
 	var lines: Array[String] = []
-	lines.append("1. Huling %s ng [b]%s[/b]: [color=%s][b]%s[/b][/color]" % [unit, prev, HIGHLIGHT, prev.right(n)])
+	lines.append("1. Huling %s ng [b]%s[/b]: [color=%s][b]%s[/b][/color]" % [unit, prev, letter_color(prev), prev.right(n)])
 	lines.append("2. " + rule_line(prev))
 	lines.append("3. " + highlighted_sentence(item, "[b]%s[/b]" % item.answer))
 	return lines

@@ -2,9 +2,11 @@
 
 Read this whole file before changing anything.
 
-**Design direction (professor feedback, Nov 2026):** not quiz-type and not story-type. The game teaches the
-rule first (`ui/Lesson.gd`), then the learner *uses* it in a 3D Pet Simulator world (word tags on animals,
-throw the right fruit). Do not bring back fill-in-the-blank question screens. `CLAUDE.md` just points here, so there is one set of rules.
+**Design direction (professor and team feedback, Nov 2026):** not quiz-type and not story-type, and **no
+lesson screen before play**. The learner learns the rule *while playing* the 3D Pet Simulator world: the
+deciding last letter on each word tag glows in its fruit's colour and fades as they get it right (it comes
+back after a miss), and the first animal of each new kind shows a short in-game example. The aimed animal's sentence is shown with a blank in an in-world banner, and the learner fills it by
+picking and throwing a fruit word. Do not bring back separate fill-in-the-blank question screens. `CLAUDE.md` just points here, so there is one set of rules.
 
 ## What this is
 

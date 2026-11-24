@@ -10,17 +10,27 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
 
 1. Install the Godot version above (standard build, not .NET).
 2. Clone the repo, open Godot, choose **Import**, and select `project.godot`.
-3. Press F5. The main menu opens; **Gubat** starts the lesson the first time.
+3. Press F5. The main menu opens; **Gubat** starts the game. There is no lesson screen: the game teaches as you play.
 4. Read `AGENTS.md`. It holds the team rules, and your coding assistant reads it too.
 
 ## What the prototype does (Forest, din/rin, 3D)
 
-1. **Aralin [Lesson] first** (automatically the first time; replay from the menu or the in-game button):
-   look at examples → tap the last letter of words → drag words into the **rin** or **din** basket → play.
+1. **Learning inside the game (no lesson screen).**
+   - The **deciding last letter** on each word tag glows in the colour of its fruit: pink for **rin**, orange
+     for **din** (*Masay**a***, *Gut**o**m*). The learner sees the pattern before anyone names it.
+   - The glow **fades** with each correct first throw in that stage (gone after 4) and **comes back** after a
+     miss. A miss also makes the letter jump. Numbers: `HELP_*` in `core/GameConfig.gd`.
+   - The first animal of each new kind (vowel, consonant, w/y; exceptions in Sky later) shows a short card:
+     *"Bagong uri ng hayop!"* [A new kind of animal!] with the word, its glowing letter, the fruit it takes
+     and the rule in one line. The game keeps running.
+   - Stages still go vowel → consonant → w/y, then mixed.
 2. **3D Forest (Pet Simulator style):** walk with the joystick (or WASD / arrow keys). Wild animals wear a
    word tag (*Ikaw*, *Gutom*, *Masaya*). Pick **rin** or **din** in the hotbar (keys 1 and 2), then **hold
    Ihagis** (or Space): the power meter goes up and down. Let go inside the green band to reach the animal
    with the orange ring. Animals back away if you get too close.
+   - The aimed animal's **sentence with a blank** shows in a banner above the word buttons (*Masaya ___ ako.*).
+     The blank shows the word in your hand, so picking rin or din fills it and throwing it answers. It is read
+     aloud when the device has a Filipino text-to-speech voice (a **Pakinggan** [Listen] button appears).
    - Preferred form: **"NAHULI MO!"** popup with the whole sentence and coins. The animal follows you; walk
      into the **Kulungan** [pen] to add it to the Animal Index.
    - Otherwise: it sniffs and walks off; a hint highlights the deciding last letter (worked example on the
@@ -49,7 +59,7 @@ and `core/Hints.gd`, ready for review.
 godot --path . -- --autoplay --nosave --shots=C:/some/folder
 ```
 
-The game goes through the lesson, then walks around the 3D forest by itself, makes 12 throws (including two
+The game opens the 3D forest and walks around it by itself, makes 12 throws (including two
 misses on the same sentence, to show both hint levels), brings animals to the pen, saves screenshots of each
 step and quits. `--nosave` leaves your real save alone.
 

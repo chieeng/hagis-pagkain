@@ -19,6 +19,13 @@ const RARITY_COINS := {"common": 5, "rare": 10, "golden": 20}             ## [pr
 ## How close the player can get before the animal backs away. Rarer = shyer = needs a stronger throw.
 const RARITY_SHY_DISTANCE := {"common": 3.0, "rare": 6.0, "golden": 8.5}  ## [prototype]
 
+## Learning inside the game (no lesson screen): the deciding last letter on each word tag glows in its
+## fruit's colour. The glow fades as the learner gets a stage right, and comes back after a miss.
+const HELP_FADE_STEP := 0.25    ## [prototype] each correct first throw lowers that stage's glow by this (1 -> 0 in 4)
+const HELP_ON_MISS := 1.0       ## [prototype] the glow level after a miss in that stage
+const R_COLOR := "#e64980"      ## [prototype] colour of the r-form fruit and of letters that take r
+const D_COLOR := "#f08c00"      ## [prototype] colour of the d-form fruit and of letters that take d
+
 ## Throwing: the power meter (0..1) times the fruit's range, in metres.
 const HIT_RADIUS := 2.3         ## [prototype] how close the fruit must land to the animal
 const METER_PERIOD := 1.6       ## [prototype] seconds for the meter to go up and down once

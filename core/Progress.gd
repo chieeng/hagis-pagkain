@@ -10,8 +10,9 @@ var collected: Dictionary = {}
 var history: Dictionary = {}
 ## biome -> true
 var unlocked: Dictionary = {"forest": true}
-## biome -> true once the learner has finished that biome's lesson (Aralin)
-var lessons_done: Dictionary = {}
+## biome -> { stage -> 0..1 } how strongly the deciding letter glows (1 = full help, 0 = none).
+## A stage missing here has not been met yet (used for the "new kind of animal" moment).
+var help: Dictionary = {}
 ## biome -> { animal id -> Array of rarities found ("common", "rare", "golden") }
 var variants: Dictionary = {}
 ## Fruit shop: owned tier ids and the one in use.
@@ -29,6 +30,32 @@ func record(biome: String, stage: String, correct: bool) -> void:
 	window.append(correct)
 	while window.size() > GameConfig.ACCURACY_WINDOW:
 		window.pop_front()
+
+
+## Glow level for a stage: starts at 1, fades with correct first throws, comes back after a miss.
+func help_level(biome: String, stage: String) -> float:
+	return float(help.get(biome, {}).get(stage, 1.0))
+
+
+func has_met_stage(biome: String, stage: String) -> bool:
+	return help.get(biome, {}).has(stage)
+
+
+func update_help(biome: String, stage: String, correct: bool) -> float:
+	if not help.has(biome):
+		help[biome] = {}
+	var level := help_level(biome, stage)
+	level = maxf(0.0, level - GameConfig.HELP_FADE_STEP) if correct else GameConfig.HELP_ON_MISS
+	help[biome][stage] = level
+	return level
+
+
+## Marks a stage as met (glow stays at its current level).
+func meet_stage(biome: String, stage: String) -> void:
+	if not help.has(biome):
+		help[biome] = {}
+	if not help[biome].has(stage):
+		help[biome][stage] = 1.0
 
 
 func stage_window(biome: String, stage: String) -> Array:
@@ -145,7 +172,7 @@ func weakest_stage(biome: String, stages: Array) -> String:
 
 
 func to_dict() -> Dictionary:
-	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked, "lessons_done": lessons_done,
+	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked, "help": help,
 		"variants": variants, "owned_fruits": owned_fruits, "equipped_fruit": equipped_fruit}
 
 
@@ -154,7 +181,7 @@ func from_dict(data: Dictionary) -> void:
 	collected = data.get("collected", {})
 	history = data.get("history", {})
 	unlocked = data.get("unlocked", {"forest": true})
-	lessons_done = data.get("lessons_done", {})
+	help = data.get("help", {})
 	variants = data.get("variants", {})
 	owned_fruits = data.get("owned_fruits", ["bayabas"])
 	equipped_fruit = str(data.get("equipped_fruit", "bayabas"))

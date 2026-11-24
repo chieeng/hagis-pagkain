@@ -91,6 +91,11 @@ func _pick_from_stage(stage: String, busy_item_ids: Array = []) -> Dictionary:
 		if item.stage == stage and item.id != _last_item_id and not item.id in busy_item_ids:
 			pool.append(item)
 	if pool.is_empty():
+		# Stay in the stage being learned: two animals may share a sentence before another stage is borrowed.
+		for item in items:
+			if item.stage == stage:
+				pool.append(item)
+	if pool.is_empty():
 		for item in items:
 			if item.id != _last_item_id and not item.id in busy_item_ids:
 				pool.append(item)
@@ -135,11 +140,12 @@ func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}, rari
 	var correct: bool = DRRule.clean_word(chosen) == item.answer
 	var stage: String = item.stage
 	progress.record(biome, stage, correct)
+	var help := progress.update_help(biome, stage, correct)
 	for entry in requeue:
 		entry.due -= 1
 
 	var result := {"correct": correct, "stage": stage, "hint_level": 0, "animal_id": animal.get("id", ""),
-		"coins": 0, "streak": 0, "multiplier": 1}
+		"coins": 0, "streak": 0, "multiplier": 1, "help": help}
 	if correct:
 		streak += 1
 		_left_animal_id = ""
