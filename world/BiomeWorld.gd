@@ -156,15 +156,17 @@ func _build_environment() -> void:
 	sky.sky_material = sky_mat
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.62, 0.66, 0.72)
-	env.ambient_light_energy = 0.45
+	# STYLE.md lighting rule 2: shared warm undertone, no cold grey washes.
+	env.ambient_light_color = Color(0.74, 0.69, 0.60)
+	env.ambient_light_energy = 0.5
 	var we := WorldEnvironment.new()
 	we.environment = env
-	add_child(we)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, -35, 0)
-	sun.light_energy = 0.8
+	sun.light_color = Color("#fff1cf")
+	sun.light_energy = 0.85
 	sun.shadow_enabled = true
+	add_child(we)
 	add_child(sun)
 
 
@@ -184,15 +186,7 @@ func _build_map() -> void:
 		water.material_override = Blocky.material(Color(_theme().water))
 		water.position = Vector3(0, 0.03, -MAP_HALF + 4.0)
 		add_child(water)
-	if biome == "mountain":
-		# Blocky peaks around the far edge.
-		var mrng := RandomNumberGenerator.new()
-		mrng.seed = 11
-		for i in 7:
-			var x := -MAP_HALF + 4.0 + i * (MAP_HALF * 2.0 - 8.0) / 6.0
-			var h := mrng.randf_range(5.0, 10.0)
-			Blocky.box(self, Vector3(6, h, 5), Color("#868e96"), Vector3(x, h / 2.0, -MAP_HALF - 6))
-			Blocky.box(self, Vector3(3, 2.2, 2.5), Color("#f8f9fa"), Vector3(x, h + 1.0, -MAP_HALF - 6))
+	_build_far_scenery()
 	if biome == "sky":
 		# Floating clouds: this biome is a cloud field in the sky.
 		var crng := RandomNumberGenerator.new()
@@ -228,6 +222,34 @@ func _build_map() -> void:
 			Blocky.box(self, Vector3(3, 1.4, 1.5), Color(_theme().hedge), Vector3(x, 0.7, z))
 			Blocky.box(self, Vector3(1.5, 1.4, 3), Color(_theme().hedge), Vector3(z, 0.7, x))
 	_build_pen()
+
+
+## STYLE.md / game-assets-enhancement skill: two silhouette ranges around every biome, with
+## aerial perspective (far = palest and haziest, near = warmer), are what sell depth.
+## Mountain gets taller rock ranges; Sky's read as distant cloud banks.
+func _build_far_scenery() -> void:
+	var horizon := Color(_theme().sky_horizon)
+	var base := Color(_theme().hedge)
+	var tall := 1.35 if biome == "mountain" else 1.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 21
+	for band in [
+		{"d": MAP_HALF + 17.0, "fade": 0.72, "hmin": 6.0 * tall, "hmax": 11.0 * tall},
+		{"d": MAP_HALF + 10.0, "fade": 0.42, "hmin": 3.5 * tall, "hmax": 7.0 * tall},
+	]:
+		var col: Color = base.lerp(horizon, band.fade)
+		var x := -MAP_HALF - 14.0
+		while x < MAP_HALF + 14.0:
+			# North/south ranges run along x; east/west ranges run along z.
+			for flank in [Vector2(x, -band.d), Vector2(x, band.d)]:
+				var h: float = rng.randf_range(band.hmin, band.hmax)
+				var w := rng.randf_range(6.0, 12.0)
+				Blocky.box(self, Vector3(w, h, 4.0), col, Vector3(flank.x, h / 2.0, flank.y))
+			for flank in [Vector2(-band.d, x), Vector2(band.d, x)]:
+				var h2: float = rng.randf_range(band.hmin, band.hmax)
+				var w2 := rng.randf_range(6.0, 12.0)
+				Blocky.box(self, Vector3(4.0, h2, w2), col, Vector3(flank.x, h2 / 2.0, flank.y))
+			x += 7.0 + rng.randf_range(-1.5, 2.5)
 
 
 func _tree(p: Vector3, rng: RandomNumberGenerator) -> void:
@@ -764,6 +786,7 @@ func _on_arrived_in_pen(a: Animal3D) -> void:
 func _build_ui() -> void:
 	ui = CanvasLayer.new()
 	add_child(ui)
+	_light_grade()
 
 	speed_lines = SpeedLines.new()
 	ui.add_child(speed_lines)
@@ -919,6 +942,35 @@ func _build_ui() -> void:
 	shop.changed.connect(_refresh_hud)
 	ui.add_child(shop)
 	_refresh_hud()
+
+
+## STYLE.md lighting rule 4 (game-assets-enhancement skill): a warm radial wash from the sun's
+## corner plus a gentle vignette, drawn over the 3D scene and under the HUD, fuse the picture
+## and keep the playfield the brightest region (squint test).
+func _light_grade() -> void:
+	var size := get_viewport().get_visible_rect().size
+	for grade in [
+		{"colors": [Color(1.0, 0.86, 0.5, 0.09), Color(1.0, 0.86, 0.5, 0.0)],
+			"offsets": [0.0, 1.0], "from": Vector2(0.35, 0.25), "to": Vector2(0.35, 1.1)},
+		{"colors": [Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.24)],
+			"offsets": [0.0, 0.68, 1.0], "from": Vector2(0.5, 0.5), "to": Vector2(0.5, 1.2)},
+	]:
+		var g := Gradient.new()
+		g.colors = PackedColorArray(grade.colors)
+		g.offsets = PackedFloat32Array(grade.offsets)
+		var tex := GradientTexture2D.new()
+		tex.gradient = g
+		tex.fill = GradientTexture2D.FILL_RADIAL
+		tex.fill_from = grade.from
+		tex.fill_to = grade.to
+		tex.width = 512
+		tex.height = 288
+		var rect := TextureRect.new()
+		rect.texture = tex
+		rect.stretch_mode = TextureRect.STRETCH_SCALE
+		rect.size = size
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(rect)
 
 
 func _refresh_hud() -> void:
