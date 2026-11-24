@@ -1,7 +1,7 @@
 # Software Design Document (SDD)
 
 **Project:** Hagis Pagkain — d–r alternation learning game (Godot 4.7.2, Android)
-**Document version:** 1.0 (draft for team review), 24 Nov 2026
+**Document version:** 1.1, 25 Nov 2026 (1.0: first draft, 24 Nov; 1.1: event-typed play log with session ids, sessions counter, decision-table additions)
 **Companion:** `docs/SRS.md` (what the system must do); this document says **how** it is built. File paths are real paths in this repository.
 
 ---
@@ -65,13 +65,13 @@ Plain data, JSON round-trip (`to_dict`/`from_dict`), owned live by `GameState`, 
 
 ### 2.5 Autoloads
 - **`GameState`** — biome order/names/scenes (incl. Island), the live `Progress`, `unlock_next` (+ signal).
-- **`SaveManager`** — `user://save.json` (whole Progress) and `user://play_log.jsonl` (append-only; one JSON line per answering throw, FR-5.2). `--nosave` disables both for autoplay runs.
+- **`SaveManager`** — `user://save.json` (whole Progress) and `user://play_log.jsonl` (append-only; one JSON line per `answer` or `short_throw` event, FR-5.2). Generates one `session_id` per app run, stamps it on every line, and increments `Progress.sessions` on launch. `--nosave` disables save and log for autoplay runs.
 - **`QuestionBank`** — loads `data/items_*.json` + `data/animals.json`; validates every item at load (FR-6.1) and skips invalid ones loudly; `get_items("island")` aggregates all biomes; `get_review_items(biome, order)` returns earlier biomes' items; `include_drafts` flag for evaluation builds (FR-6.2). Takes no autoload dependencies so tests can compile it standalone.
 - **`AudioManager`** — placeholder tones generated in code (whoosh, hit, reveal fanfares, coin, combo) until recorded audio exists.
 
 ### 2.6 `world/BiomeWorld.gd` — the one 3D scene (FR-1, FR-2, FR-4)
 Each biome `.tscn` is two lines: this script + `biome = "<name>"`.
-- **Theming:** `THEMES[biome]` (sky colours, ground, tree palette, hedge, optional water strip); Mountain adds blocky peaks, Sky floating clouds, Island sand + sea. All placeholder art via `world/Blocky.gd` box helpers.
+- **Theming (see `STYLE.md`):** `THEMES[biome]` (sky colours, ground, tree palette, hedge, optional water strip); Sky adds floating clouds, Island sand + sea. Every biome gets two aerial-perspective silhouette ranges (`_build_far_scenery`, far = palest, near = warmer, Mountain tallest) and a warm radial light wash + gentle vignette under the HUD (`_light_grade`). All placeholder art via `world/Blocky.gd` box helpers.
 - **HUD:** joystick, dynamic fruit hotbar (rebuilt per aimed animal from its stored choices; word colour = r-form pink / d-form orange, same colours as the letter glow), power meter with green band computed from the aimed animal's distance and the equipped fruit's range, sentence banner (+ TTS via `DisplayServer.tts_*` when a `fil`/`tl` voice exists), Index, shop, combo labels, toasts, hint/catch/intro panels.
 - **Throw resolution:** landing point = facing × power × fruit range; any wild animal within `HIT_RADIUS` is hit; short/long throws show "Kulang/Sobrang lakas!" and are not answers (FR-2.5). Correct → celebrate (beam/confetti/flash/shake scaled by rarity), animal follows; pen entry delivers. Wrong → sniff-and-leave + hint panel.
 - **Teaching moments:** `_introduce_stage` shows the "Bagong uri ng hayop!" card the first time a stage's animal is aimed at (FR-1.3); `_refresh_help` pushes glow levels to all wild tags after every answer.
@@ -94,10 +94,12 @@ Each biome `.tscn` is two lines: this script + `biome = "<name>"`.
 Validation (load + CI): required fields; `___` present; `prev_word` occurs before the blank; `answer == DRRule.preferred_form(prev_word, answer)`; `stage == DRRule.stage(prev_word)`; status ∈ {draft, approved}; unique ids.
 
 ### 3.2 Save file (user://save.json) — `Progress.to_dict()`
-`coins, collected{biome→[ids]}, history{biome→{stage→[bool×≤15]}}, unlocked{biome→bool}, help{biome→{stage→0..1}}, variants{biome→{id→[rarities]}}, owned_fruits, equipped_fruit, pair_stats{pair→{stage→{right,total}}}, missed_items[ids], answered{biome→int}`.
+`coins, collected{biome→[ids]}, history{biome→{stage→[bool×≤15]}}, unlocked{biome→bool}, help{biome→{stage→0..1}}, variants{biome→{id→[rarities]}}, owned_fruits, equipped_fruit, pair_stats{pair→{stage→{right,total}}}, missed_items[ids], answered{biome→int}, sessions`.
 
-### 3.3 Play log (user://play_log.jsonl), one line per answering throw
-`{t, biome, item, pair, stage, chosen, correct, hint_level, animal, rarity, streak, coins, ms_since_start, perfect}` — covers the proposal's "Data tracked" list; short throws produce no line (they are not answers). TODO before the pilot: session id; field freeze with the instruments.
+### 3.3 Play log (user://play_log.jsonl), one line per event
+- `event: "answer"` — `{t, sid, biome, item, pair, stage, chosen, correct, hint_level, animal, rarity, streak, coins, ms_since_start, perfect}`.
+- `event: "short_throw"` — `{t, sid, biome, item, pair, stage, chosen, short, ms_since_start}`: an aimed throw that reached no animal; logged but **never counted as an answer**, so short-throw rates are reportable (proposal, "Data tracked").
+- `sid` is the per-run session id; `Progress.sessions` counts runs. Together they cover the proposal's whole "Data tracked" list. TODO before the pilot: freeze the fields with the research instruments (FR-5.4), and clear each device's old log — lines written by pre-v0.2 builds have no `event` field and must be discarded in analysis.
 
 ## 4. Key design decisions and alternatives
 | Decision | Why | Alternative rejected |
@@ -108,6 +110,8 @@ Validation (load + CI): required fields; `___` present; `prev_word` occurs befor
 | Device TTS for narration | 0 assets, every item "read aloud" day one | 300+ recorded clips (post-MVP add-on per proposal) |
 | Per-animal choice sets | Review sentences from other pairs need their own hotbar | One hotbar per biome: breaks with spiral review |
 | Rule checked at data load and in CI | Content errors impossible to ship silently | Trusting item authors |
+| Short throws logged, never scored | Proposal tracks them; scoring them would mix aim skill into the d/r measure | Not logging (loses data) or counting as wrong (invalidates the construct) |
+| Nickname/avatar profile deferred to pre-pilot | MVP demo needs no identity; the design is a local picker writing one string into the save | Building accounts (violates offline/no-account scope) |
 
 ## 5. Testing design
 - `tests/run_tests.gd` (headless, exit code): rule cases incl. exceptions and non-exceptions (-ro/-re), highlight/hint builders, every data file item, Progress windows/glow/shop/serialization, session flow (stages, requeue, worked example, streaks/rarity/coins, busy animals, unlock), three-choice/Island behaviour, review mix share, exception gate, pair stats & missed list.

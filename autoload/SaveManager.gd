@@ -7,10 +7,16 @@ const SAVE_PATH := "user://save.json"
 const LOG_PATH := "user://play_log.jsonl"
 
 var enabled := not "--nosave" in OS.get_cmdline_user_args()
+## One id per app run, written into every log line, so the evaluation can count and
+## separate play sessions [proposal, "Data tracked": sessions played].
+var session_id := "%d-%03d" % [Time.get_unix_time_from_system(), randi() % 1000]
 
 
 func _ready() -> void:
 	load_game()
+	if enabled:
+		GameState.progress.sessions += 1
+		save_game()
 
 
 func save_game() -> void:
@@ -31,9 +37,10 @@ func load_game() -> void:
 		GameState.from_dict(data)
 
 
-## One JSON line per throw, for the evaluation data [proposal, "Data tracked"]:
-## first-throw accuracy per pair/context/biome, hints shown, time per answer.
-## TODO(Irish + Jian): add session id and streaks; agree the final fields with the research instruments.
+## One JSON line per event, for the evaluation data [proposal, "Data tracked"]:
+## "event": "answer" (a throw that reached an animal) or "short_throw" (not counted as
+## an answer, but logged). Every line carries the session id and a timestamp.
+## TODO(Irish + Jian): agree the final fields with the research instruments before the pilot.
 func log_answer(entry: Dictionary) -> void:
 	if not enabled:
 		return
@@ -46,4 +53,5 @@ func log_answer(entry: Dictionary) -> void:
 	if f == null:
 		return
 	entry["t"] = Time.get_datetime_string_from_system()
+	entry["sid"] = session_id
 	f.store_line(JSON.stringify(entry))

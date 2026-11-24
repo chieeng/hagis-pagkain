@@ -153,10 +153,12 @@ func test_progress() -> void:
 	check("glow stops at 0", p.help_level("forest", "wy"), 0.0)
 	p.update_help("forest", "wy", false)
 	check("a miss brings the glow back", p.help_level("forest", "wy"), GameConfig.HELP_ON_MISS)
+	p.sessions = 3
 	var copy := Progress.new()
 	copy.from_dict(JSON.parse_string(JSON.stringify(p.to_dict())))
 	check("save round trip", copy.collected_count("forest"), 1)
 	check("help saved", copy.help_level("forest", "wy"), GameConfig.HELP_ON_MISS)
+	check("sessions saved", copy.sessions, 3)
 	finished += 1
 
 

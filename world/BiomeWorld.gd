@@ -620,8 +620,14 @@ func _throw(power: float) -> void:
 		_cam_focus = null
 	else:
 		_cam_focus = null
-		# Missed the animal: about aiming, not about d/r, so nothing is logged or counted.
+		# Missed the animal: about aiming, not about d/r, so it is never counted as an answer.
+		# It IS logged [proposal, "Data tracked": short throws], so the evaluation can see them.
 		var short := target != null and is_instance_valid(target) and power * _range() < _flat_distance(target.global_position)
+		if target != null and is_instance_valid(target):
+			SaveManager.log_answer({"event": "short_throw", "biome": biome,
+				"item": target.item.get("id", ""), "pair": target.item.get("pair", ""),
+				"stage": target.item.get("stage", ""), "chosen": fruit, "short": short,
+				"ms_since_start": Time.get_ticks_msec() - _started_ms})
 		_show_toast(Strings.TOO_SHORT if short else Strings.TOO_FAR, 1.2)
 		AudioManager.play("miss", 1.3)
 		await get_tree().create_timer(0.6).timeout
@@ -636,6 +642,7 @@ func _resolve(target: Animal3D, fruit: String, perfect: bool = false) -> void:
 		GameState.progress.coins += GameConfig.PERFECT_BONUS
 		r.coins = int(r.coins) + GameConfig.PERFECT_BONUS
 	SaveManager.log_answer({
+		"event": "answer",
 		"biome": biome, "item": target.item.get("id", ""), "pair": target.item.get("pair", ""),
 		"stage": target.item.get("stage", ""), "chosen": fruit, "correct": r.correct,
 		"hint_level": r.hint_level, "animal": target.data.get("id", ""), "rarity": target.rarity,

@@ -25,6 +25,8 @@ var pair_stats: Dictionary = {}
 var missed_items: Array = []
 ## biome -> total sentences answered there (the biome-select screen shows this) [proposal].
 var answered: Dictionary = {}
+## App runs on this device [proposal, "Data tracked": sessions played].
+var sessions: int = 0
 
 
 func record(biome: String, stage: String, correct: bool) -> void:
@@ -207,7 +209,7 @@ func weakest_stage(biome: String, stages: Array) -> String:
 func to_dict() -> Dictionary:
 	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked, "help": help,
 		"variants": variants, "owned_fruits": owned_fruits, "equipped_fruit": equipped_fruit,
-		"pair_stats": pair_stats, "missed_items": missed_items, "answered": answered}
+		"pair_stats": pair_stats, "missed_items": missed_items, "answered": answered, "sessions": sessions}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -222,3 +224,4 @@ func from_dict(data: Dictionary) -> void:
 	pair_stats = data.get("pair_stats", {})
 	missed_items = data.get("missed_items", [])
 	answered = data.get("answered", {})
+	sessions = int(data.get("sessions", 0))

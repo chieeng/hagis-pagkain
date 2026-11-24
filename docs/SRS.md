@@ -2,7 +2,7 @@
 
 **Project:** Hagis Pagkain [Throw Food] — a gamified, offline mobile learning game for mastering the standard d–r forms among Grade 4 learners
 **Team:** 2627-sem1-it332-07 (Lobitana, Erag, Manubag, Becera, Cortes) · **Adviser:** Mr. Ralph P. Laviste
-**Document version:** 1.0 (draft for team review), 24 Nov 2026
+**Document version:** 1.1, 25 Nov 2026 (1.0: first draft, 24 Nov; 1.1: short-throw/session logging built, nickname profile FR-5.5 added, proposal traceability table §4a, aligned to the panel review)
 **Source of truth:** `D-R_AlternationLearningGame-Capstone_Proposal` Parts 2–4; the KWF rule as specified in `core/DRRule.gd`.
 
 ---
@@ -33,7 +33,7 @@ KWF *Manwal sa Masinop na Pagsulat* (2014, §8.1–8.2, pp. 35–36); *Ortograpi
 ## 2. Overall description
 
 ### 2.1 Product perspective
-A standalone, self-contained mobile app. All data (item bank, animal roster, save, play log) lives on the device. Researchers collect the play log manually during sessions; there is no server component.
+A standalone, self-contained mobile app. All data (item bank, animal roster, save, play log) lives on the device. Researchers collect the play log manually during sessions; there is no server component, no account system, and no network use of any kind (see the panel review's M2 fix, which aligns the proposal's wording to this).
 
 ### 2.2 User class
 Grade 4 learners (ages ~9–10), Filipino as L1 or L2, possibly low reading fluency: all learner-facing text is short Filipino at Grade 4 level, large touch targets (≥ 64 px), optional read-aloud. Teachers, advisers and researchers interact with the **content files and logs**, never with an in-app role.
@@ -68,12 +68,12 @@ Status column: ✅ built · 🔶 partly built · ⬜ planned (post-MVP unless ma
 | FR-2.2 | Wild animals wander, wear the word tag of the word before the blank, and back away when approached; rarer animals keep a greater distance. | ✅ |
 | FR-2.3 | When the learner aims at an animal, its sentence with a blank is shown in a banner; the blank previews the word currently in hand. When a Filipino TTS voice exists on the device, a "Pakinggan" button reads it aloud. | ✅ |
 | FR-2.4 | The learner answers by picking a fruit word and holding the throw button: a power meter cycles, and releasing inside the green band makes the fruit reach the animal. | ✅ |
-| FR-2.5 | A throw that falls short or misses reaches no animal, counts as **no answer**, and is logged as a short throw. | ✅ |
+| FR-2.5 | A throw that reaches no animal counts as **no answer**; when it was aimed at an animal, it is logged as a `short_throw` event (never as an answer), so the evaluation can report short-throw rates. | ✅ |
 | FR-2.6 | In Forest and Island, two fruit words (the pair's d- and r-forms) are offered; **from River through Sky, three** (plus one form of another pair), so the learner must also pick the right word. | ✅ |
 | FR-2.7 | Correct first throw: celebratory reveal ("NAHULI MO!"), the completed sentence, immediate coins; the animal follows the learner and joins the Animal Index when it reaches the pen. | ✅ |
 | FR-2.8 | Wrong throw: the animal sniffs and leaves; a visual hint highlights the deciding letter with a one-line rule; the sentence re-queues after a few other sentences. | ✅ |
 | FR-2.9 | A second wrong throw on the same sentence shows a worked example (3 steps). | ✅ |
-| FR-2.10 | Golden Sky animals speak two-sentence lines with two blanks. | ⬜ (GO4; decide per feasibility review) |
+| FR-2.10 | Golden Sky animals speak two-sentence lines with two blanks. | ⬜ (GO4; keep-or-drop decision M9 in the panel review) |
 
 ### 3.3 Progression and biomes
 | ID | Requirement | Status |
@@ -99,9 +99,10 @@ Status column: ✅ built · 🔶 partly built · ⬜ planned (post-MVP unless ma
 | ID | Requirement | Status |
 |---|---|---|
 | FR-5.1 | My Progress screen: the learner's own first-throw accuracy per pair and per context, and the sentences to review next (recent misses, cleared once answered correctly). | ✅ |
-| FR-5.2 | Play log (one line per answering throw): biome, item, pair, stage, chosen word, correct, hint level, animal, rarity, streak, coins, time since start, perfect flag, timestamp. | ✅ |
-| FR-5.3 | Save on device: coins, collected animals and variants, per-stage accuracy windows, glow levels, unlocks, shop state, per-pair stats, missed list, answered counts. | ✅ |
-| FR-5.4 | Session id in the log and a researcher export path agreed with the instruments. | 🔶 (fields exist; session id TODO) |
+| FR-5.2 | Play log, one JSON line per event with an `event` field: `answer` (biome, item, pair, stage, chosen word, correct, hint level, animal, rarity, streak, coins, time since start, perfect flag) or `short_throw` (biome, item, pair, stage, chosen word, short flag). Every line carries a per-run session id and a timestamp. | ✅ |
+| FR-5.3 | Save on device: coins, collected animals and variants, per-stage accuracy windows, glow levels, unlocks, shop state, per-pair stats, missed list, answered counts, sessions played. | ✅ |
+| FR-5.4 | Researchers collect `user://play_log.jsonl` from each device during sessions (no network export); final log fields are frozen with the research instruments before the pilot. | 🔶 (log built; field freeze pending) |
+| FR-5.5 | Nickname/avatar profile, stored only on the device, chosen before the pre-test (no accounts, no personal data). | ⬜ pre-pilot |
 
 ### 3.6 Content pipeline
 | ID | Requirement | Status |
@@ -121,6 +122,19 @@ Status column: ✅ built · 🔶 partly built · ⬜ planned (post-MVP unless ma
 | NFR-6 | Deterministic, unit-tested game logic (no visuals in `core/`); CI runs rule, data and session tests plus a headless autoplay on every PR. |
 | NFR-7 | Installable as a single debug APK ≤ ~150 MB via the team's GitHub Actions workflow. |
 
+## 4a. Traceability to the proposal
+
+| Proposal element | SRS requirements |
+|---|---|
+| GO1 Forest (din/rin) | FR-1.*, FR-2.1–2.5, FR-2.7–2.9, FR-3.1, FR-3.4, FR-4.1–4.4, FR-6.1 |
+| GO2 River (daw/raw + review) | GO1 set + FR-2.6 (three words), FR-3.3 (spiral review) |
+| GO3 Mountain (dito/rito, diyan/riyan) | GO2 set over the demonstrative pairs |
+| GO4 Sky (doon/roon + exceptions) | GO2 set + FR-3.2 (exception gate); FR-2.10 pending the M9 decision in the panel review |
+| Island (mixed, no SMART objective) | FR-3.6; its play is logged like the rest (FR-5.2) |
+| GO5 Evaluation / RQ1–RQ5 | FR-5.1–5.5, FR-6.2–6.3, NFR-2, NFR-3 |
+| "Data tracked" list (Part 3) | FR-5.2 (accuracy per pair/context/biome, short throws, hints, time per answer, streaks), FR-5.3 (sessions played, Index completion) |
+| Theoretical basis (scaffolding/ZPD) | FR-1.1–1.3, FR-2.8–2.9 (glow and hints fade with mastery, return on error) |
+
 ## 5. Acceptance criteria for the MVP demo
 1. Fresh install opens the biome-select screen; only Forest is open.
 2. Forest is completable: Index 8/8 + accuracy check unlocks River; the unlock is visible on the biome-select screen.
@@ -128,5 +142,5 @@ Status column: ✅ built · 🔶 partly built · ⬜ planned (post-MVP unless ma
 4. Sky hides the exception stage until the regular stages are met, then introduces *Mura din* with the "-ra/-ri/-raw/-ray" card.
 5. Island opens after Sky and mixes all pairs with two choices per animal.
 6. My Progress shows per-pair/per-context percentages matching play, and lists missed sentences.
-7. Killing and reopening the app restores all progress; `play_log.jsonl` contains one line per answering throw.
-8. The whole flow works by touch alone on an Android phone.
+7. Killing and reopening the app restores all progress; `play_log.jsonl` contains one `answer` line per answering throw and a `short_throw` line per aimed throw that fell short, each with a session id; the sessions-played count rises by one per app run.
+8. The whole flow works by touch alone on an Android phone (Android 8, 2 GB RAM target device).
