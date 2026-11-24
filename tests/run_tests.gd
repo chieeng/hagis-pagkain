@@ -14,7 +14,8 @@ var finished := 0
 
 
 func _init() -> void:
-	var tests := [test_rule, test_stage_and_highlight, test_data_files, test_progress, test_session]
+	var tests := [test_rule, test_stage_and_highlight, test_data_files, test_progress, test_session,
+		test_choices_and_island, test_review_mix, test_exception_gate, test_pair_stats]
 	for t in tests:
 		t.call()
 	# Each test function adds 1 to `finished` as its last line; a script error skips that.
@@ -114,7 +115,12 @@ func test_data_files() -> void:
 		"prev_word": "Ikaw", "answer": "rin", "translation": "", "status": "draft"}
 	check("wrong stage tag is rejected", Bank.validate_item(bad).size(), 1)
 	var animals = JSON.parse_string(FileAccess.get_file_as_string("res://data/animals.json"))
-	check("forest has %d animals" % GameConfig.ANIMALS_PER_BIOME, animals.forest.size(), GameConfig.ANIMALS_PER_BIOME)
+	var all_ids := {}
+	for biome in ["forest", "river", "mountain", "sky", "island"]:
+		check("%s has %d animals" % [biome, GameConfig.ANIMALS_PER_BIOME], animals[biome].size(), GameConfig.ANIMALS_PER_BIOME)
+		for a in animals[biome]:
+			check("animal id %s unique" % a.id, all_ids.has(a.id), false)
+			all_ids[a.id] = true
 	finished += 1
 
 
@@ -154,13 +160,16 @@ func test_progress() -> void:
 	finished += 1
 
 
-func _items() -> Array[Dictionary]:
+func _items(biome := "forest", particle := "din") -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for row in [["v1", "vowel", "Masaya", "rin"], ["v2", "vowel", "ka", "rin"],
-			["c1", "consonant", "Gutom", "din"], ["c2", "consonant", "Matamis", "din"],
-			["w1", "wy", "Ikaw", "rin"], ["w2", "wy", "Kahoy", "rin"]]:
-		out.append({"id": row[0], "stage": row[1], "prev_word": row[2], "answer": row[3],
-			"sentence": "%s ___ x." % row[2], "biome": "forest", "status": "draft"})
+	var d := DRRule.d_form(particle)
+	var r := DRRule.r_form(particle)
+	var pair := "%s/%s" % [d, r]
+	for row in [["v1", "vowel", "Masaya", r], ["v2", "vowel", "ka", r],
+			["c1", "consonant", "Gutom", d], ["c2", "consonant", "Matamis", d],
+			["w1", "wy", "Ikaw", r], ["w2", "wy", "Kahoy", r]]:
+		out.append({"id": "%s-%s" % [biome, row[0]], "stage": row[1], "prev_word": row[2], "answer": row[3],
+			"sentence": "%s ___ x." % row[2], "biome": biome, "pair": pair, "status": "draft"})
 	return out
 
 
@@ -281,4 +290,92 @@ func test_session() -> void:
 			break
 	check("cleared after enough correct answers", cleared, true)
 	check("every stage window full when cleared", p2.stage_window("forest", "wy").size(), GameConfig.ACCURACY_WINDOW)
+	finished += 1
+
+
+## Three foods from the River biome on; Island plays mixed with the pair's own two [proposal].
+func test_choices_and_island() -> void:
+	var p := Progress.new()
+	var s := BiomeSession.new("river", _items("river", "daw"), _animals(8), p, 6)
+	var item := s.next_sentence()
+	check("river has 3 choices", s.current_choices.size(), 3)
+	check("choices include d-form", s.current_choices.has(DRRule.d_form(item.answer)), true)
+	check("choices include r-form", s.current_choices.has(DRRule.r_form(item.answer)), true)
+	var third := ""
+	for c in s.current_choices:
+		if DRRule.d_form(c) != DRRule.d_form(item.answer):
+			third = c
+	check("third choice is another pair's form", DRRule.is_supported(third) and third != "", true)
+	check("picking the third choice is wrong", s.answer(third).correct, false)
+
+	var island := BiomeSession.new("island", _items("island", "doon"), _animals(8), p, 7)
+	check("island plays mixed from the start", island.mixed, true)
+	island.next_sentence()
+	check("island is back to 2 choices", island.current_choices.size(), 2)
+	finished += 1
+
+
+## Spiral review [proposal]: about 30% of sentences come from earlier biomes.
+func test_review_mix() -> void:
+	var p := Progress.new()
+	var s := BiomeSession.new("river", _items("river", "daw"), _animals(8), p, 8, _items("forest", "din"))
+	var review := 0
+	var own := 0
+	for i in 60:
+		var item := s.next_sentence()
+		if item.biome == "forest":
+			review += 1
+		else:
+			own += 1
+		s.answer(item.answer)
+	check("some sentences are review", review > 5, true)
+	check("most sentences are the biome's own", own > review, true)
+	check("review answers are recorded under this biome", p.stage_window("forest", "vowel").is_empty(), true)
+	finished += 1
+
+
+## Sky's exception stage opens only after 80% on the three regular stages [proposal, GO4].
+func test_exception_gate() -> void:
+	var p := Progress.new()
+	var items := _items("sky", "doon")
+	items.append({"id": "sky-x1", "stage": "exception", "prev_word": "Mura", "answer": "din",
+		"sentence": "Mura ___ x.", "biome": "sky", "pair": "din/rin", "status": "draft"})
+	var s := BiomeSession.new("sky", items, _animals(8), p, 9)
+	check("exception stage exists", s.stages.has("exception"), true)
+	check("exception closed at the start", s.stage_open("exception"), false)
+	check("unlock check ignores the exception stage", s.unlock_stages().has("exception"), false)
+	# No exception sentence appears while the gate is closed (run through all the stages).
+	for i in GameConfig.STAGE_LENGTH * 4:
+		var item := s.next_sentence()
+		check("no exception sentence while closed", item.stage == "exception", false)
+		s.answer(item.answer)
+	for stage in ["vowel", "consonant", "wy"]:
+		for i in GameConfig.ACCURACY_WINDOW:
+			p.record("sky", stage, true)
+	check("exception opens after 80% on regular stages", s.stage_open("exception"), true)
+	# Mixed practice now favours the unmet exception stage.
+	s.mixed = true
+	check("weakest open stage is exception", s.current_stage(), "exception")
+	finished += 1
+
+
+## My Progress data: accuracy per pair and context, and the missed-sentence list [proposal].
+func test_pair_stats() -> void:
+	var p := Progress.new()
+	var s := BiomeSession.new("forest", _items(), _animals(8), p, 10)
+	var item := s.next_sentence()
+	var wrong := DRRule.d_form(item.answer) if item.answer != DRRule.d_form(item.answer) else DRRule.r_form(item.answer)
+	s.answer(wrong)
+	check("miss recorded per pair", p.pair_accuracy("din/rin", item.stage), 0.0)
+	check("missed sentence listed", p.missed_items.has(item.id), true)
+	for i in GameConfig.REQUEUE_GAP:
+		s.answer(s.next_sentence().answer)
+	var back := s.next_sentence()
+	check("missed sentence comes back for review", back.id, item.id)
+	s.answer(back.answer)
+	check("right answer clears it from the review list", p.missed_items.has(item.id), false)
+	check("no data gives -1", p.pair_accuracy("daw/raw", "vowel"), -1.0)
+	var copy := Progress.new()
+	copy.from_dict(JSON.parse_string(JSON.stringify(p.to_dict())))
+	check("pair stats saved", copy.pair_accuracy("din/rin", item.stage) >= 0.0, true)
 	finished += 1

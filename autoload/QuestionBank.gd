@@ -62,7 +62,10 @@ static func validate_item(item) -> Array[String]:
 	var blank := sentence.find("___")
 	if blank == -1:
 		problems.append("sentence has no ___ blank")
-	elif sentence.rfind(str(item.prev_word), blank) == -1:
+	# Search only the text before the blank. (rfind with a `from` argument returns -1
+	# whenever from + the word's length passes the end of the string, so it misses
+	# prev_words in sentences that end right after the blank.)
+	elif sentence.left(blank).rfind(str(item.prev_word)) == -1:
 		problems.append("prev_word '%s' is not before the blank" % item.prev_word)
 	if not DRRule.is_supported(item.answer):
 		problems.append("answer '%s' is not one of the five pairs" % item.answer)
@@ -79,9 +82,30 @@ static func validate_item(item) -> Array[String]:
 func get_items(biome: String) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for item in _items:
-		if item.biome == biome and (include_drafts or item.status == "approved"):
+		# Island mixes every pair and context; it reuses the other biomes' sentences [proposal].
+		if (item.biome == biome or biome == "island") and (include_drafts or item.status == "approved"):
 			out.append(item)
 	return out
+
+
+## Items from the biomes before `biome` in `biome_order` (pass GameState.BIOME_ORDER),
+## for spiral review [proposal]. Island needs none: its own pool already mixes everything.
+## The order is a parameter so this script compiles without the autoloads (tests run it alone).
+func get_review_items(biome: String, biome_order: Array) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if biome == "island":
+		return out
+	var idx: int = biome_order.find(biome)
+	for i in range(0, maxi(idx, 0)):
+		out.append_array(get_items(str(biome_order[i])))
+	return out
+
+
+func find_item(item_id: String) -> Dictionary:
+	for item in _items:
+		if item.id == item_id:
+			return item
+	return {}
 
 
 func get_animals(biome: String) -> Array:

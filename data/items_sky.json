@@ -1,0 +1,86 @@
+[
+	{
+		"id": "sky-v01", "biome": "sky", "pair": "doon/roon", "stage": "vowel", "difficulty": 1,
+		"sentence": "Lilipad ang agila ___.", "prev_word": "agila", "answer": "roon",
+		"translation": "The eagle will fly there.", "audio": "", "status": "draft",
+		"note": "Proposal GO4 example (KWF-checked). Grade 4 naturalness not yet checked."
+	},
+	{
+		"id": "sky-v02", "biome": "sky", "pair": "doon/roon", "stage": "vowel", "difficulty": 1,
+		"sentence": "Nakatira ang mga paniki ___.", "prev_word": "paniki", "answer": "roon",
+		"translation": "The bats live there.", "audio": "", "status": "draft",
+		"note": "Proposal GO4 example (KWF-checked)."
+	},
+	{
+		"id": "sky-v03", "biome": "sky", "pair": "doon/roon", "stage": "vowel", "difficulty": 1,
+		"sentence": "Pumunta sila ___.", "prev_word": "sila", "answer": "roon",
+		"translation": "They went there.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "sky-v04", "biome": "sky", "pair": "din/rin", "stage": "vowel", "difficulty": 2,
+		"sentence": "Bago ___ ang laruan.", "prev_word": "Bago", "answer": "rin",
+		"translation": "The toy is new too.", "audio": "", "status": "draft",
+		"note": "Proposal GO4 look-alike non-exception: -go ends in a vowel and is NOT a KWF exception."
+	},
+	{
+		"id": "sky-c01", "biome": "sky", "pair": "doon/roon", "stage": "consonant", "difficulty": 1,
+		"sentence": "Maraming ulap ___.", "prev_word": "ulap", "answer": "doon",
+		"translation": "There are many clouds there.", "audio": "", "status": "draft",
+		"note": "Proposal GO4 example (KWF-checked)."
+	},
+	{
+		"id": "sky-c02", "biome": "sky", "pair": "doon/roon", "stage": "consonant", "difficulty": 1,
+		"sentence": "Makikita ang bulkan ___.", "prev_word": "bulkan", "answer": "doon",
+		"translation": "The volcano can be seen there.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "sky-c03", "biome": "sky", "pair": "doon/roon", "stage": "consonant", "difficulty": 1,
+		"sentence": "Lumilipad ang uwak ___.", "prev_word": "uwak", "answer": "doon",
+		"translation": "The crow flies there.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "sky-w01", "biome": "sky", "pair": "doon/roon", "stage": "wy", "difficulty": 2,
+		"sentence": "Mataas ang tulay ___.", "prev_word": "tulay", "answer": "roon",
+		"translation": "The bridge there is high.", "audio": "", "status": "draft",
+		"note": "Proposal GO4 example (KWF-checked)."
+	},
+	{
+		"id": "sky-w02", "biome": "sky", "pair": "doon/roon", "stage": "wy", "difficulty": 2,
+		"sentence": "Nagtago ang baboy ___.", "prev_word": "baboy", "answer": "roon",
+		"translation": "The pig hid there.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "sky-w03", "biome": "sky", "pair": "doon/roon", "stage": "wy", "difficulty": 2,
+		"sentence": "Kumakain ang kalabaw ___.", "prev_word": "kalabaw", "answer": "roon",
+		"translation": "The carabao eats there.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "sky-x01", "biome": "sky", "pair": "din/rin", "stage": "exception", "difficulty": 3,
+		"sentence": "Mura ___ ang laruan.", "prev_word": "Mura", "answer": "din",
+		"translation": "The toy is cheap too.", "audio": "", "status": "draft",
+		"note": "Proposal GO4 exception example: -ra ending (KWF, 2014, p. 35)."
+	},
+	{
+		"id": "sky-x02", "biome": "sky", "pair": "din/rin", "stage": "exception", "difficulty": 3,
+		"sentence": "Maaari ___ tayong maglaro.", "prev_word": "Maaari", "answer": "din",
+		"translation": "We can also play.", "audio": "", "status": "draft",
+		"note": "KWF's own example word for the -ri exception (KWF, 2014, p. 35)."
+	},
+	{
+		"id": "sky-x03", "biome": "sky", "pair": "din/rin", "stage": "exception", "difficulty": 3,
+		"sentence": "Maganda ang araw ___ ngayon.", "prev_word": "araw", "answer": "din",
+		"translation": "The day is also beautiful today.", "audio": "", "status": "draft",
+		"note": "AI draft for the -raw exception. Needs Jian/adviser review."
+	},
+	{
+		"id": "sky-x04", "biome": "sky", "pair": "din/rin", "stage": "exception", "difficulty": 3,
+		"sentence": "Napasigaw ng aray ___ si Ben.", "prev_word": "aray", "answer": "din",
+		"translation": "Ben also shouted ouch.", "audio": "", "status": "draft",
+		"note": "AI draft for the -ray exception. Wording is awkward; needs Jian/adviser review."
+	}
+]

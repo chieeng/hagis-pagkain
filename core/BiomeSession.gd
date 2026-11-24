@@ -9,11 +9,15 @@ extends RefCounted
 ##   - One throw per sentence. Correct: the animal joins the pen and the learner earns coins.
 ##     Wrong: the animal leaves, a hint shows, and the sentence comes back later (spaced review).
 ##   - A second miss on the same sentence shows a worked example.
-## TODO: 30% spiral review from earlier biomes, rare/golden animals, 3 foods from River on,
-##       Sky's exception stage only after 80% on the regular stages, hints that fade.
+##   - About 30% of sentences come from earlier biomes (spiral review) [proposal].
+##   - From the River biome on, three foods are offered; Island is back to the pair's two [proposal].
+##   - Sky's exception stage opens only after 80% on the three regular stages [proposal, GO4].
+##   - Island plays mixed from the start: every pair, every context, no new rule [proposal].
 
 var biome: String
 var items: Array[Dictionary] = []
+## Items from earlier biomes, mixed in at GameConfig.REVIEW_SHARE [proposal].
+var review_items: Array[Dictionary] = []
 var animals: Array = []
 var progress: Progress
 var stages: Array[String] = []
@@ -40,9 +44,10 @@ var _left_animal_id := ""
 var rng := RandomNumberGenerator.new()
 
 
-func _init(p_biome: String, p_items: Array[Dictionary], p_animals: Array, p_progress: Progress, seed: int = -1) -> void:
+func _init(p_biome: String, p_items: Array[Dictionary], p_animals: Array, p_progress: Progress, seed: int = -1, p_review: Array[Dictionary] = []) -> void:
 	biome = p_biome
 	items = p_items
+	review_items = p_review
 	animals = p_animals
 	progress = p_progress
 	if seed >= 0:
@@ -54,13 +59,43 @@ func _init(p_biome: String, p_items: Array[Dictionary], p_animals: Array, p_prog
 			if item.stage == s:
 				stages.append(s)
 				break
+	# Island teaches no new rule: mixed review of everything from the first sentence [proposal].
+	mixed = biome == "island"
+
+
+## Sky only: the exception stage hides until the three regular stages are at 80% [proposal, GO4].
+func stage_open(s: String) -> bool:
+	if s != GameConfig.GATED_STAGE or biome != GameConfig.GATE_BIOME:
+		return true
+	for reg in stages:
+		if reg != GameConfig.GATED_STAGE and not progress.stage_met(biome, reg):
+			return false
+	return true
+
+
+func open_stages() -> Array[String]:
+	var out: Array[String] = []
+	for s in stages:
+		if stage_open(s):
+			out.append(s)
+	return out
+
+
+## The stages the next-biome unlock checks: the proposal's accuracy check names the
+## vowel, consonant and w/y stages (the Sky exception stage is a research target, not a gate).
+func unlock_stages() -> Array[String]:
+	var out: Array[String] = []
+	for s in stages:
+		if s != GameConfig.GATED_STAGE:
+			out.append(s)
+	return out
 
 
 func current_stage() -> String:
 	if stages.is_empty():
 		return ""
 	if mixed:
-		return progress.weakest_stage(biome, stages)
+		return progress.weakest_stage(biome, open_stages())
 	return stages[stage_index]
 
 
@@ -75,14 +110,48 @@ func next_sentence(busy_animal_ids: Array = [], busy_item_ids: Array = []) -> Di
 			current = requeue[i].item
 			requeue.remove_at(i)
 			break
+	# Spiral review [proposal]: about 30% of sentences come from earlier biomes.
+	if current.is_empty() and not review_items.is_empty() and rng.randf() < GameConfig.REVIEW_SHARE:
+		current = _pick_review(current_stage(), busy_item_ids)
 	if current.is_empty():
 		current = _pick_from_stage(current_stage(), busy_item_ids)
 	_last_item_id = current.id
 	current_animal = _pick_animal(busy_animal_ids)
-	current_choices = [DRRule.d_form(current.answer), DRRule.r_form(current.answer)]
-	if rng.randi() % 2 == 1:
-		current_choices.reverse()
+	current_choices = _choices_for(current)
 	return current
+
+
+## The fruit words offered for this sentence: the pair's two forms, plus one form of another
+## pair from the River biome on, so the learner also picks the right word [proposal, GO2].
+func _choices_for(item: Dictionary) -> Array[String]:
+	var d := DRRule.d_form(item.answer)
+	var out: Array[String] = [d, DRRule.r_form(d)]
+	if biome in GameConfig.THREE_CHOICE_BIOMES:
+		var others: Array[String] = []
+		for other_d in DRRule.PAIRS:
+			if other_d != d:
+				others.append(other_d)
+				others.append(DRRule.PAIRS[other_d])
+		out.append(others[rng.randi() % others.size()])
+	for i in range(out.size() - 1, 0, -1):
+		var j := rng.randi() % (i + 1)
+		var tmp := out[i]
+		out[i] = out[j]
+		out[j] = tmp
+	return out
+
+
+## A review sentence from an earlier biome, preferring the stage being practised.
+func _pick_review(stage: String, busy_item_ids: Array) -> Dictionary:
+	var pool: Array[Dictionary] = []
+	for item in review_items:
+		if item.stage == stage and item.id != _last_item_id and not item.id in busy_item_ids and stage_open(str(item.stage)):
+			pool.append(item)
+	if pool.is_empty():
+		for item in review_items:
+			if item.id != _last_item_id and not item.id in busy_item_ids and stage_open(str(item.stage)):
+				pool.append(item)
+	return {} if pool.is_empty() else pool[rng.randi() % pool.size()]
 
 
 func _pick_from_stage(stage: String, busy_item_ids: Array = []) -> Dictionary:
@@ -140,6 +209,7 @@ func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}, rari
 	var correct: bool = DRRule.clean_word(chosen) == item.answer
 	var stage: String = item.stage
 	progress.record(biome, stage, correct)
+	progress.record_pair(str(item.get("pair", "")), stage, str(item.get("id", "")), correct)
 	var help := progress.update_help(biome, stage, correct)
 	for entry in requeue:
 		entry.due -= 1
@@ -165,6 +235,9 @@ func answer(chosen: String, item: Dictionary = {}, animal: Dictionary = {}, rari
 		if answered_in_stage >= GameConfig.STAGE_LENGTH:
 			answered_in_stage = 0
 			stage_index += 1
+			# Skip stages that are not open yet (Sky's exception stage) [proposal, GO4].
+			while stage_index < stages.size() and not stage_open(stages[stage_index]):
+				stage_index += 1
 			if stage_index >= stages.size():
 				stage_index = stages.size() - 1
 				mixed = true
@@ -193,5 +266,5 @@ func deliver(animal_id: String, rarity: String = "common") -> Dictionary:
 	return {
 		"new_animal": is_new,
 		"new_variant": new_variant,
-		"cleared": progress.biome_cleared(biome, stages, animals.size()),
+		"cleared": progress.biome_cleared(biome, unlock_stages(), animals.size()),
 	}

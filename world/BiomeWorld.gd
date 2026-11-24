@@ -23,9 +23,21 @@ const PEN_HALF := 4.0
 const PLAYER_START := Vector3(0, 0, 9)
 const MAP_HALF := 28.0
 const CAMERA_OFFSET := Vector3(0, 12, 9.5)
-## Fruit word colours: [r-form, d-form, third choice]. They match the glowing letters on the tags.
-const WORD_COLORS := [Color(GameConfig.R_COLOR), Color(GameConfig.D_COLOR), Color("#7950f2")]
 const AUTOPLAY_THROWS := 18
+
+## Placeholder looks per biome, all blocky boxes (owner: Alex). Forest is the fallback.
+const THEMES := {
+	"forest": {"sky_top": "#4dabf7", "sky_horizon": "#d0ebff", "ground": "#51cf66",
+		"tree_a": "#2f9e44", "tree_b": "#40c057", "trunk": "#8d5a3b", "hedge": "#2b8a3e", "water": ""},
+	"river": {"sky_top": "#3bc9db", "sky_horizon": "#e3fafc", "ground": "#8ce99a",
+		"tree_a": "#2f9e44", "tree_b": "#63e6be", "trunk": "#a07850", "hedge": "#0ca678", "water": "#339af0"},
+	"mountain": {"sky_top": "#748ffc", "sky_horizon": "#e5dbff", "ground": "#a9b388",
+		"tree_a": "#5c940d", "tree_b": "#868e96", "trunk": "#6f4e37", "hedge": "#495057", "water": ""},
+	"sky": {"sky_top": "#9775fa", "sky_horizon": "#fff0f6", "ground": "#e9ecef",
+		"tree_a": "#f8f9fa", "tree_b": "#dee2e6", "trunk": "#ced4da", "hedge": "#b197fc", "water": ""},
+	"island": {"sky_top": "#22b8cf", "sky_horizon": "#fff9db", "ground": "#ffe8a1",
+		"tree_a": "#37b24d", "tree_b": "#94d82d", "trunk": "#b08968", "hedge": "#1098ad", "water": "#15aabf"},
+}
 
 var session: BiomeSession
 var player: Player3D
@@ -54,6 +66,7 @@ var follow_label: Label
 var combo_label: Label
 var mult_label: Label
 var fruit_label: Label
+var hotbar: HBoxContainer
 var index_button: Button
 var fruit_buttons: Dictionary = {}
 var throw_button: Button
@@ -91,12 +104,14 @@ var _snapped := {}
 var _started_ms := 0
 
 
+func _theme() -> Dictionary:
+	return THEMES.get(biome, THEMES["forest"])
+
+
 func _ready() -> void:
 	_started_ms = Time.get_ticks_msec()
-	session = BiomeSession.new(biome, QuestionBank.get_items(biome), QuestionBank.get_animals(biome), GameState.progress)
-	if not session.items.is_empty():
-		var d := DRRule.d_form(session.items[0].answer)
-		fruits = [DRRule.r_form(d), d]
+	session = BiomeSession.new(biome, QuestionBank.get_items(biome), QuestionBank.get_animals(biome),
+		GameState.progress, -1, QuestionBank.get_review_items(biome, GameState.BIOME_ORDER))
 	_build_environment()
 	_build_map()
 	player = Player3D.new()
@@ -119,7 +134,8 @@ func _ready() -> void:
 		return
 	for i in WILD_COUNT:
 		_spawn_wild("common")
-	_select_fruit(fruits[0])
+	if not fruits.is_empty():
+		_select_fruit(fruits[0])
 
 
 func _range() -> float:
@@ -133,10 +149,10 @@ func _build_environment() -> void:
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color("#4dabf7")
-	sky_mat.sky_horizon_color = Color("#d0ebff")
-	sky_mat.ground_horizon_color = Color("#d0ebff")
-	sky_mat.ground_bottom_color = Color("#69db7c")
+	sky_mat.sky_top_color = Color(_theme().sky_top)
+	sky_mat.sky_horizon_color = Color(_theme().sky_horizon)
+	sky_mat.ground_horizon_color = Color(_theme().sky_horizon)
+	sky_mat.ground_bottom_color = Color(_theme().ground).lightened(0.15)
 	sky.sky_material = sky_mat
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -157,8 +173,33 @@ func _build_map() -> void:
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(MAP_HALF * 2 + 24, MAP_HALF * 2 + 24)
 	ground.mesh = plane
-	ground.material_override = Blocky.material(Color("#51cf66"))
+	ground.material_override = Blocky.material(Color(_theme().ground))
 	add_child(ground)
+	if str(_theme().water) != "":
+		# A flat river/sea strip across the north side (decor only; animals avoid it visually).
+		var water := MeshInstance3D.new()
+		var wp := PlaneMesh.new()
+		wp.size = Vector2(MAP_HALF * 2 + 24, 7.0)
+		water.mesh = wp
+		water.material_override = Blocky.material(Color(_theme().water))
+		water.position = Vector3(0, 0.03, -MAP_HALF + 4.0)
+		add_child(water)
+	if biome == "mountain":
+		# Blocky peaks around the far edge.
+		var mrng := RandomNumberGenerator.new()
+		mrng.seed = 11
+		for i in 7:
+			var x := -MAP_HALF + 4.0 + i * (MAP_HALF * 2.0 - 8.0) / 6.0
+			var h := mrng.randf_range(5.0, 10.0)
+			Blocky.box(self, Vector3(6, h, 5), Color("#868e96"), Vector3(x, h / 2.0, -MAP_HALF - 6))
+			Blocky.box(self, Vector3(3, 2.2, 2.5), Color("#f8f9fa"), Vector3(x, h + 1.0, -MAP_HALF - 6))
+	if biome == "sky":
+		# Floating clouds: this biome is a cloud field in the sky.
+		var crng := RandomNumberGenerator.new()
+		crng.seed = 13
+		for i in 14:
+			var p := Vector3(crng.randf_range(-MAP_HALF, MAP_HALF), crng.randf_range(4.5, 9.0), crng.randf_range(-MAP_HALF, MAP_HALF))
+			Blocky.box(self, Vector3(crng.randf_range(2.5, 5.0), 0.9, crng.randf_range(1.5, 3.0)), Color("#ffffff"), p)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
@@ -184,8 +225,8 @@ func _build_map() -> void:
 		Blocky.box(self, Vector3(0.25, 0.25, 0.25), c, p + Vector3(0, 0.12, 0))
 	for x in range(-int(MAP_HALF) - 2, int(MAP_HALF) + 3, 3):
 		for z in [-MAP_HALF - 2, MAP_HALF + 2]:
-			Blocky.box(self, Vector3(3, 1.4, 1.5), Color("#2b8a3e"), Vector3(x, 0.7, z))
-			Blocky.box(self, Vector3(1.5, 1.4, 3), Color("#2b8a3e"), Vector3(z, 0.7, x))
+			Blocky.box(self, Vector3(3, 1.4, 1.5), Color(_theme().hedge), Vector3(x, 0.7, z))
+			Blocky.box(self, Vector3(1.5, 1.4, 3), Color(_theme().hedge), Vector3(z, 0.7, x))
 	_build_pen()
 
 
@@ -202,8 +243,8 @@ func _tree(p: Vector3, rng: RandomNumberGenerator) -> void:
 	shape.position = Vector3(0, 1.5, 0)
 	t.add_child(shape)
 	var h := rng.randf_range(1.6, 2.6)
-	Blocky.box(t, Vector3(0.6, h, 0.6), Color("#8d5a3b"), Vector3(0, h / 2.0, 0))
-	var g := Color("#2f9e44").lerp(Color("#40c057"), rng.randf())
+	Blocky.box(t, Vector3(0.6, h, 0.6), Color(_theme().trunk), Vector3(0, h / 2.0, 0))
+	var g := Color(_theme().tree_a).lerp(Color(_theme().tree_b), rng.randf())
 	Blocky.box(t, Vector3(2.6, 1.6, 2.6), g, Vector3(0, h + 0.7, 0))
 	Blocky.box(t, Vector3(1.7, 1.2, 1.7), g.lightened(0.12), Vector3(0, h + 1.9, 0))
 
@@ -281,6 +322,7 @@ func _spawn_wild(rarity: String, far: bool = false) -> Animal3D:
 	if item.is_empty():
 		return null
 	var a := _new_animal(session.current_animal, item, Animal3D.State.WILD, rarity)
+	a.choices = session.current_choices.duplicate()
 	var min_d := 12.0 if far else 9.0
 	for i in 30:
 		var p := Vector3(randf_range(-MAP_HALF + 3, MAP_HALF - 3), 0, randf_range(-MAP_HALF + 3, 4))
@@ -356,6 +398,8 @@ func _update_aim(delta: float) -> void:
 	if not _charging:
 		_aim = _pick_target()
 	if _aim != null and is_instance_valid(_aim) and _aim.is_wild():
+		if not _aim.choices.is_empty() and _aim.choices != fruits:
+			_set_hotbar(_aim.choices)
 		_aim_ring.visible = true
 		_aim_ring.global_position = _aim.global_position + Vector3(0, 0.05, 0)
 		var dist := _flat_distance(_aim.global_position)
@@ -380,11 +424,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and not event.echo:
 		match event.keycode:
 			KEY_1:
-				if event.pressed:
+				if event.pressed and fruits.size() > 0:
 					_select_fruit(fruits[0])
 			KEY_2:
 				if event.pressed and fruits.size() > 1:
 					_select_fruit(fruits[1])
+			KEY_3:
+				if event.pressed and fruits.size() > 2:
+					_select_fruit(fruits[2])
 			KEY_SPACE:
 				if event.pressed:
 					start_charge()
@@ -396,6 +443,29 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # ---------------------------------------------------------------- throwing
+
+## The fruit word's colour follows its first letter, like the letter glow: r-form pink, d-form orange.
+static func _word_color(word: String) -> Color:
+	return Color(GameConfig.R_COLOR if word.begins_with("r") else GameConfig.D_COLOR)
+
+
+## Rebuilds the word buttons for the aimed animal's sentence (2 words, or 3 from River on).
+func _set_hotbar(choices: Array) -> void:
+	fruits.clear()
+	for c in choices:
+		fruits.append(str(c))
+	for b in fruit_buttons.values():
+		(b as Button).queue_free()
+	fruit_buttons.clear()
+	for f in fruits:
+		var b := UiKit.button(f, 40, _word_color(f))
+		b.custom_minimum_size = Vector2(140, 96)
+		b.pivot_offset = b.custom_minimum_size / 2.0
+		b.pressed.connect(_select_fruit.bind(f))
+		hotbar.add_child(b)
+		fruit_buttons[f] = b
+	_select_fruit(selected_fruit if selected_fruit in fruits else fruits[0])
+
 
 func _select_fruit(f: String) -> void:
 	selected_fruit = f
@@ -776,18 +846,10 @@ func _build_ui() -> void:
 	fruit_label = UiKit.label("", 22, Color.WHITE, 8)
 	fruit_label.position = Vector2(470, 560)
 	ui.add_child(fruit_label)
-	var hotbar := HBoxContainer.new()
+	hotbar = HBoxContainer.new()
 	hotbar.add_theme_constant_override("separation", 26)
 	hotbar.position = Vector2(470, 600)
 	ui.add_child(hotbar)
-	for i in fruits.size():
-		var f := fruits[i]
-		var b := UiKit.button(f, 40, WORD_COLORS[i % WORD_COLORS.size()])
-		b.custom_minimum_size = Vector2(140, 96)
-		b.pivot_offset = b.custom_minimum_size / 2.0
-		b.pressed.connect(_select_fruit.bind(f))
-		hotbar.add_child(b)
-		fruit_buttons[f] = b
 
 	meter = PowerMeter.new()
 	meter.position = Vector2(1006, 330)
@@ -904,8 +966,7 @@ func _update_banner() -> void:
 		sentence_label.set_meta("key", key)
 		var fill := "_____"
 		if selected_fruit != "":
-			var c: Color = WORD_COLORS[max(fruits.find(selected_fruit), 0) % WORD_COLORS.size()]
-			fill = "[u][b][color=#%s]%s[/color][/b][/u][color=#868e96]?[/color]" % [c.to_html(false), selected_fruit]
+			fill = "[u][b][color=#%s]%s[/color][/b][/u][color=#868e96]?[/color]" % [_word_color(selected_fruit).to_html(false), selected_fruit]
 		sentence_label.text = "[center]%s[/center]" % str(item.get("sentence", "")).replace("___", fill)
 		sentence_banner.visible = true
 		sentence_banner.reset_size()
@@ -1125,6 +1186,8 @@ func _bot(delta: float) -> void:
 	player.facing = d.normalized()
 	player.move(Vector3.ZERO, 0.016)
 	_aim = target
+	if not target.choices.is_empty():
+		_set_hotbar(target.choices)
 	_select_fruit(_bot_choice(target))
 	_bot_throw(target)
 	_bot_wait = 2.8

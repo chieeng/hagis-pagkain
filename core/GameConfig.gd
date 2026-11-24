@@ -41,3 +41,16 @@ const FRUIT_TIERS: Array[Dictionary] = [
 
 ## Stage order inside every biome [proposal]. Sky adds "exception".
 const STAGE_ORDER: Array[String] = ["vowel", "consonant", "wy", "exception"]
+
+## Spiral review [proposal]: about 30% of each biome's sentences come from earlier biomes.
+const REVIEW_SHARE := 0.3
+## From the River biome on, some sentences show three foods, so the learner must pick the
+## right word, not only the right letter [proposal, GO2]. Island goes back to the pair's
+## own two forms [proposal, Unlocking].
+const THREE_CHOICE_BIOMES: Array[String] = ["river", "mountain", "sky"]
+## Sky only: the exception stage appears after 80% first-throw accuracy on the three
+## regular stages [proposal, GO4].
+const GATED_STAGE := "exception"
+const GATE_BIOME := "sky"
+## How many of the most recent missed sentences My Progress lists for review.
+const REVIEW_LIST_MAX := 8

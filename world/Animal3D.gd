@@ -23,6 +23,7 @@ var data: Dictionary = {}      ## from data/animals.json
 var rarity := "common"         ## "common", "rare" or "golden"
 var coins_earned := 0          ## paid when it was fed (shown in the catch popup)
 var item: Dictionary = {}      ## the sentence this animal carries (empty when IN_PEN from a save)
+var choices: Array = []        ## the fruit words offered for this sentence (2, or 3 from River on)
 var state := State.WILD
 var wander_area := Rect2(-24, -26, 48, 30)
 var pen_area := Rect2(-14, 8, 8, 8)

@@ -57,6 +57,22 @@ const SHOP_IN_USE := "Gamit na"                                        # [In use
 const SHOP_NOTE := "Mas malayo ang abot ng mas magandang prutas."      # [Better fruit reaches farther.]
 const SHOP_BOUGHT := "Nabili: %s!"                                     # [Bought: %s!]
 
+# Biome-select screen [proposal: shows progress per biome; locked biomes say what is needed]
+const PROGRESS_ANIMALS := "%d/%d hayop"                          # [%d/%d animals]
+const PROGRESS_SENTENCES := "%d pangungusap"                     # [%d sentences answered]
+const NEED_PREV := "Tapusin muna ang %s"                          # [Finish %s first]
+const NEED_INDEX := "Kumpletuhin ang Aklat ng Hayop"              # [Complete the Animal Index]
+const NEED_ACCURACY := "Abutin ang 80% sa bawat yugto"            # [Reach 80% in every stage]
+const PLAY_AGAIN := "Maglaro ulit"                                # [Play again]
+
+# My Progress screen [proposal: accuracy per pair and per context, sentences to review next]
+const MY_PROGRESS := "Aking Pag-unlad"                            # [My Progress]
+const REVIEW_NEXT := "Balikan ang mga pangungusap na ito:"        # [Review these sentences next:]
+const NO_DATA := "—"
+const NOTHING_TO_REVIEW := "Wala! Tuloy lang sa paglalaro."       # [Nothing! Keep playing.]
+const CONTEXT := "Yugto"                                          # [Stage/Context]
+const PAIR := "Pares"                                             # [Pair]
+
 ## Stage names shown small at the top of a biome.
 const STAGE_NAMES := {
 	"vowel": "Patinig",        # [Vowel]

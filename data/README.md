@@ -1,6 +1,7 @@
 # Question bank format (owner: Jian)
 
 One file per biome: `items_forest.json`, `items_river.json`, `items_mountain.json`, `items_sky.json`.
+The mixed Island biome has no file of its own: it reuses every other biome's items [proposal].
 Each file is a JSON array of items:
 
 | Field | Required | Meaning |

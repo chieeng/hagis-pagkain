@@ -18,9 +18,17 @@ var variants: Dictionary = {}
 ## Fruit shop: owned tier ids and the one in use.
 var owned_fruits: Array = ["bayabas"]
 var equipped_fruit: String = "bayabas"
+## My Progress data [proposal]: accuracy per pair and per context, all biomes together.
+## pair -> { stage -> { "right": int, "total": int } }
+var pair_stats: Dictionary = {}
+## Item ids of recently missed sentences, newest first (the "sentences to review next").
+var missed_items: Array = []
+## biome -> total sentences answered there (the biome-select screen shows this) [proposal].
+var answered: Dictionary = {}
 
 
 func record(biome: String, stage: String, correct: bool) -> void:
+	answered[biome] = int(answered.get(biome, 0)) + 1
 	if not history.has(biome):
 		history[biome] = {}
 	var per_stage: Dictionary = history[biome]
@@ -30,6 +38,31 @@ func record(biome: String, stage: String, correct: bool) -> void:
 	window.append(correct)
 	while window.size() > GameConfig.ACCURACY_WINDOW:
 		window.pop_front()
+
+
+## My Progress [proposal]: lifetime counts per pair and context, plus the missed-sentence list.
+func record_pair(pair: String, stage: String, item_id: String, correct: bool) -> void:
+	if not pair_stats.has(pair):
+		pair_stats[pair] = {}
+	var per_stage: Dictionary = pair_stats[pair]
+	if not per_stage.has(stage):
+		per_stage[stage] = {"right": 0, "total": 0}
+	per_stage[stage].total += 1
+	if correct:
+		per_stage[stage].right += 1
+		missed_items.erase(item_id)   # answered right later: no longer "to review next"
+	elif item_id != "":
+		missed_items.erase(item_id)
+		missed_items.push_front(item_id)
+		while missed_items.size() > GameConfig.REVIEW_LIST_MAX:
+			missed_items.pop_back()
+
+
+## Accuracy 0..1 for one pair in one stage, or -1.0 when nothing was answered yet.
+func pair_accuracy(pair: String, stage: String) -> float:
+	var s: Dictionary = pair_stats.get(pair, {}).get(stage, {})
+	var total := int(s.get("total", 0))
+	return -1.0 if total == 0 else float(s.get("right", 0)) / total
 
 
 ## Glow level for a stage: starts at 1, fades with correct first throws, comes back after a miss.
@@ -173,7 +206,8 @@ func weakest_stage(biome: String, stages: Array) -> String:
 
 func to_dict() -> Dictionary:
 	return {"coins": coins, "collected": collected, "history": history, "unlocked": unlocked, "help": help,
-		"variants": variants, "owned_fruits": owned_fruits, "equipped_fruit": equipped_fruit}
+		"variants": variants, "owned_fruits": owned_fruits, "equipped_fruit": equipped_fruit,
+		"pair_stats": pair_stats, "missed_items": missed_items, "answered": answered}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -185,3 +219,6 @@ func from_dict(data: Dictionary) -> void:
 	variants = data.get("variants", {})
 	owned_fruits = data.get("owned_fruits", ["bayabas"])
 	equipped_fruit = str(data.get("equipped_fruit", "bayabas"))
+	pair_stats = data.get("pair_stats", {})
+	missed_items = data.get("missed_items", [])
+	answered = data.get("answered", {})

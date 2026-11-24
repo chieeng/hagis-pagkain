@@ -9,12 +9,19 @@ const BIOMES := {
 	"forest": ["din/rin"],
 	"river": ["daw/raw"],
 	"mountain": ["dito/rito", "diyan/riyan"],
-	"sky": ["doon/roon", "exceptions"],
+	"sky": ["doon/roon", "espesyal"],
+	"island": ["lahat"],   # mixed review of every pair [proposal]; "Isla" is a placeholder name
 }
-const BIOME_ORDER: Array[String] = ["forest", "river", "mountain", "sky"]
-const BIOME_NAMES := {"forest": "Gubat", "river": "Ilog", "mountain": "Bundok", "sky": "Himpapawid"}
+const BIOME_ORDER: Array[String] = ["forest", "river", "mountain", "sky", "island"]
+const BIOME_NAMES := {"forest": "Gubat", "river": "Ilog", "mountain": "Bundok", "sky": "Himpapawid", "island": "Isla"}
 ## Biomes that have a playable scene in this build.
-const BIOME_SCENES := {"forest": "res://biomes/forest/Forest3D.tscn"}
+const BIOME_SCENES := {
+	"forest": "res://biomes/forest/Forest3D.tscn",
+	"river": "res://biomes/river/River3D.tscn",
+	"mountain": "res://biomes/mountain/Mountain3D.tscn",
+	"sky": "res://biomes/sky/Sky3D.tscn",
+	"island": "res://biomes/island/Island3D.tscn",
+}
 
 var progress := Progress.new()
 
