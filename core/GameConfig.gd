@@ -26,17 +26,20 @@ const HELP_ON_MISS := 1.0       ## [prototype] the glow level after a miss in th
 const R_COLOR := "#e64980"      ## [prototype] colour of the r-form fruit and of letters that take r
 const D_COLOR := "#f08c00"      ## [prototype] colour of the d-form fruit and of letters that take d
 
-## Throwing: the power meter (0..1) times the fruit's range, in metres.
-const HIT_RADIUS := 2.3         ## [prototype] how close the fruit must land to the animal
-const METER_PERIOD := 1.6       ## [prototype] seconds for the meter to go up and down once
-const PERFECT_WINDOW := 0.4     ## [prototype] "PERPEKTO!" if the landing is within 40% of HIT_RADIUS
-const PERFECT_BONUS := 3        ## [prototype] extra coins for a perfect AND correct throw
-## Fruit shop tiers [proposal: "coins buy new kinds of food"]. Better fruit flies farther.
+## Zones [redesign 2026-11-25, docs/superpowers/specs]: the path is blocked by stations
+## (bridge/gate); each station's slots are sentences, solved by placing collected word tiles.
+const STATION_GAP := 24.0       ## [prototype] metres of path between stations
+const SLOT_RANGE := 16.0        ## [prototype] how close the player must be to place into a slot (the nearest unsolved one is active)
+const TILE_PICKUP := 1.6        ## [prototype] how close the player walks to collect a tile
+const SLOTS_FOREST := 2         ## [prototype] slots per station in forest/river
+const SLOTS_LATER := 3          ## [prototype] slots per station from mountain on
+## Fruit shop tiers [proposal: "coins buy new kinds of food"]. Snacks now make you walk
+## faster (speed multiplier), since reach is no longer a mechanic.
 const FRUIT_TIERS: Array[Dictionary] = [
-	{"id": "bayabas", "name": "Bayabas", "range": 10.0, "price": 0, "color": "#94d82d"},
-	{"id": "mangga", "name": "Mangga", "range": 13.0, "price": 40, "color": "#fcc419"},
-	{"id": "pinya", "name": "Pinya", "range": 16.0, "price": 100, "color": "#f59f00"},
-	{"id": "gintong-mangga", "name": "Gintong Mangga", "range": 20.0, "price": 250, "color": "#ffe066"},
+	{"id": "bayabas", "name": "Bayabas", "speed": 1.0, "price": 0, "color": "#94d82d"},
+	{"id": "mangga", "name": "Mangga", "speed": 1.2, "price": 40, "color": "#fcc419"},
+	{"id": "pinya", "name": "Pinya", "speed": 1.4, "price": 100, "color": "#f59f00"},
+	{"id": "gintong-mangga", "name": "Gintong Mangga", "speed": 1.7, "price": 250, "color": "#ffe066"},
 ]
 
 ## Stage order inside every biome [proposal]. Sky adds "exception".

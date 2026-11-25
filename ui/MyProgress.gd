@@ -15,7 +15,7 @@ func _ready() -> void:
 
 	var back := UiKit.button(Strings.BACK, 26, Color("#495057"))
 	back.position = Vector2(16, 14)
-	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://main/Main.tscn"))
+	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://main/Hub3D.tscn"))
 	add_child(back)
 	var title := UiKit.label(Strings.MY_PROGRESS, 44, Color("#1971c2"))
 	title.position = Vector2(200, 18)

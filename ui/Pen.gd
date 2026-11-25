@@ -26,7 +26,7 @@ func _ready() -> void:
 	add_child(ui)
 	var back := UiKit.button(Strings.BACK, 26, Color("#495057"))
 	back.position = Vector2(16, 14)
-	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://main/Main.tscn"))
+	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://main/Hub3D.tscn"))
 	ui.add_child(back)
 	var title := UiKit.label("%s  (%d)" % [Strings.PEN, count], 48, Color.WHITE, 12)
 	title.position = Vector2(200, 14)

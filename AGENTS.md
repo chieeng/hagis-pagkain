@@ -2,11 +2,16 @@
 
 Read this whole file before changing anything.
 
-**Design direction (professor and team feedback, Nov 2026):** not quiz-type and not story-type, and **no
-lesson screen before play**. The learner learns the rule *while playing* the 3D Pet Simulator world: the
-deciding last letter on each word tag glows in its fruit's colour and fades as they get it right (it comes
-back after a miss), and the first animal of each new kind shows a short in-game example. The aimed animal's sentence is shown with a blank in an in-world banner, and the learner fills it by
-picking and throwing a fruit word. Do not bring back separate fill-in-the-blank question screens. `CLAUDE.md` just points here, so there is one set of rules.
+**Design direction (professor and team feedback Nov 2026; mechanic redesign approved by the team
+25 Nov 2026, see `docs/superpowers/specs/2026-11-25-portal-tile-redesign-design.md`):** not quiz-type,
+not story-type, and **no lesson screen before play**. The game is a hub-and-portals adventure: the
+learner walks a lobby, enters a biome portal, and repairs the broken path (bridges, gates) by
+collecting **word tiles** (din, rin, ...) and placing them into sentence slots. The deciding last
+letter on each slot's sign glows in its word's colour and fades as they get it right (it comes back
+after a miss); the first slot of each new kind shows a short in-game example. Only the FIRST tile
+placed in a slot counts as the answer; retries are hints-and-practice. Solving a station frees the
+caged animal into the Animal Index. Do not bring back throwing, and do not bring back separate
+fill-in-the-blank question screens. `CLAUDE.md` just points here, so there is one set of rules.
 
 ## What this is
 

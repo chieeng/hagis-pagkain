@@ -1,7 +1,7 @@
 class_name FruitShop
 extends Control
-## Tindahan ng Prutas [Fruit Shop]: spend coins on better fruit that flies farther,
-## so shy rare/golden animals can be reached [proposal: coins buy new kinds of food].
+## Tindahan ng Prutas [Fruit Shop]: spend coins on fruit snacks that make the explorer
+## walk faster [proposal: coins buy new kinds of food; redesign 2026-11-25].
 ## Owner: Alex (look), Irish (Progress.buy_fruit logic).
 
 signal changed
@@ -66,7 +66,7 @@ func _card(t: Dictionary) -> PanelContainer:
 	fruit.custom_minimum_size = Vector2(100, 100)
 	fruit.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	vb.add_child(fruit)
-	for text in [t.name, Strings.SHOP_RANGE % int(t.range)]:
+	for text in [t.name, Strings.SHOP_SPEED % t.speed]:
 		var l := UiKit.label(text, 28 if text == t.name else 24)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vb.add_child(l)

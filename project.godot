@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Hagis Pagkain"
 config/description="Offline Grade 4 game for d-r alternation in Filipino (din/rin, daw/raw, dito/rito, diyan/riyan, doon/roon)."
-run/main_scene="res://main/Main.tscn"
+run/main_scene="res://main/Hub3D.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [audio]

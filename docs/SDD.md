@@ -1,7 +1,7 @@
 # Software Design Document (SDD)
 
 **Project:** Hagis Pagkain — d–r alternation learning game (Godot 4.7.2, Android)
-**Document version:** 1.1, 25 Nov 2026 (1.0: first draft, 24 Nov; 1.1: event-typed play log with session ids, sessions counter, decision-table additions)
+**Document version:** 2.0, 25 Nov 2026 (1.x: throw-based core; 2.0: team-approved redesign — lobby + portals + word-tile path repair; design record in `docs/superpowers/specs/2026-11-25-portal-tile-redesign-design.md`)
 **Companion:** `docs/SRS.md` (what the system must do); this document says **how** it is built. File paths are real paths in this repository.
 
 ---
@@ -17,9 +17,9 @@
 ### 1.2 Architecture at a glance
 ```
           ┌───────────── Scenes (display only) ─────────────┐
-          │ main/Main.gd         biome-select screen         │
-          │ world/BiomeWorld.gd  one 3D biome (×5 .tscn)     │
-          │ world/Animal3D.gd, Player3D, Joystick, PowerMeter│
+          │ main/Hub.gd          walkable lobby + portals    │
+          │ world/ZoneWorld.gd   one 3D zone (×5 .tscn)      │
+          │ world/Player3D.gd, Joystick                      │
           │ ui/ MyProgress, Pen, AnimalIndex, FruitShop, …   │
           └───────┬──────────────────────────────┬──────────┘
                   │ calls                        │ signals
@@ -69,16 +69,18 @@ Plain data, JSON round-trip (`to_dict`/`from_dict`), owned live by `GameState`, 
 - **`QuestionBank`** — loads `data/items_*.json` + `data/animals.json`; validates every item at load (FR-6.1) and skips invalid ones loudly; `get_items("island")` aggregates all biomes; `get_review_items(biome, order)` returns earlier biomes' items; `include_drafts` flag for evaluation builds (FR-6.2). Takes no autoload dependencies so tests can compile it standalone.
 - **`AudioManager`** — placeholder tones generated in code (whoosh, hit, reveal fanfares, coin, combo) until recorded audio exists.
 
-### 2.6 `world/BiomeWorld.gd` — the one 3D scene (FR-1, FR-2, FR-4)
+### 2.6 `world/ZoneWorld.gd` — the one 3D zone (FR-1, FR-2, FR-4)
 Each biome `.tscn` is two lines: this script + `biome = "<name>"`.
-- **Theming (see `STYLE.md`):** `THEMES[biome]` (sky colours, ground, tree palette, hedge, optional water strip); Sky adds floating clouds, Island sand + sea. Every biome gets two aerial-perspective silhouette ranges (`_build_far_scenery`, far = palest, near = warmer, Mountain tallest) and a warm radial light wash + gentle vignette under the HUD (`_light_grade`). All placeholder art via `world/Blocky.gd` box helpers.
-- **HUD:** joystick, dynamic fruit hotbar (rebuilt per aimed animal from its stored choices; word colour = r-form pink / d-form orange, same colours as the letter glow), power meter with green band computed from the aimed animal's distance and the equipped fruit's range, sentence banner (+ TTS via `DisplayServer.tts_*` when a `fil`/`tl` voice exists), Index, shop, combo labels, toasts, hint/catch/intro panels.
-- **Throw resolution:** landing point = facing × power × fruit range; any wild animal within `HIT_RADIUS` is hit; short/long throws show "Kulang/Sobrang lakas!" and are not answers (FR-2.5). Correct → celebrate (beam/confetti/flash/shake scaled by rarity), animal follows; pen entry delivers. Wrong → sniff-and-leave + hint panel.
-- **Teaching moments:** `_introduce_stage` shows the "Bagong uri ng hayop!" card the first time a stage's animal is aimed at (FR-1.3); `_refresh_help` pushes glow levels to all wild tags after every answer.
-- **Autoplay bot** (`--autoplay`): walks, buys, throws (seeded misses for both hint levels), delivers, screenshots (`--shots=DIR`), prints a summary line CI greps. `--biome=<name>` picks the biome.
+- **Stations:** spawned endlessly down a winding path (`AHEAD` kept incomplete ahead of the player). Each station draws its slots' sentences from `BiomeSession.next_sentence` (busy lists prevent duplicates), stores each slot's choice set, and builds: the obstacle (bridge over water / locked gate, alternating), one sign per slot (previous word with the deciding letter glowing by `Progress.help_level`), an invisible `StaticBody3D` wall, and a caged animal whose rarity is `session.next_rarity()`.
+- **Tiles & pouch:** one tile per choice-set occurrence is scattered in the segment before the station; pickup is distance-based into a `pouch` multiset rendered as tappable HUD buttons (keyboard 1–4 in development).
+- **Placement (`place_word` → `_resolve`):** the nearest unsolved slot in `SLOT_RANGE` is active and drives the banner + TTS. First placement → `session.answer` (stats, coins × combo, glow, hint level) + an `answer` log line; retries → `DRRule.is_preferred` + a `retry` log line. Correct builds the plank/bar with the word on it; wrong flies the tile back to the pouch, blinks the sign letter, and shows the hint (worked example on the slot's second wrong).
+- **Rescue (`_complete_station`):** cage rises away, `session.deliver` (Index, variants, `cleared` → `GameState.unlock_next`), celebration scaled by rarity, the animal follows, the wall drops.
+- **Teaching moments:** `_introduce_stage` shows the "Bagong uri ng hayop!" card on first approach of a new stage's slot (FR-1.3); `_refresh_all_glows` pushes glow levels to every sign after each answer.
+- **Theming (see `STYLE.md`):** `THEMES[biome]`; ground, path, trees, hedges and aerial-perspective silhouettes extend per segment as the path grows; warm wash + vignette under the HUD (`_light_grade`). All placeholder art via `world/Blocky.gd`.
+- **Autoplay bot** (`--autoplay`): collects the tiles a station needs, places (one scripted double-miss to show both hint levels), rescues `AUTOPLAY_RESCUES` animals, buys from the shop, screenshots (`--shots=DIR`), prints the `AUTOPLAY 3D` summary line CI greps. Other zones run directly: `godot --path . res://biomes/river/River3D.tscn -- --autoplay --nosave`.
 
-### 2.7 `main/Main.gd` + `ui/`
-- **Biome select (FR-3.5):** one card per biome: open → animals x/8 + sentences answered; locked → what is missing (previous biome's Index or accuracy). Bottom row: Pen, My Progress, coins.
+### 2.7 `main/Hub.gd` + `ui/`
+- **Lobby (FR-2.1, FR-3.5):** a walkable 3D hub; one portal per biome with name, pairs and progress (open) or the missing requirement (locked); walking into an open portal fades into its zone scene. Bottom row: Pen, My Progress, Tindahan.
 - **`ui/MyProgress.gd` (FR-5.1):** pair × context table from `pair_stats` (— for no data; green at ≥ 80%, orange below) + the missed-sentence list via `QuestionBank.find_item`.
 - `AnimalIndex`, `FruitShop`, `Pen`, `UiKit` (shared kid-sized controls), `Strings` (every learner-facing Filipino string, C2/NFR-4).
 
@@ -97,9 +99,9 @@ Validation (load + CI): required fields; `___` present; `prev_word` occurs befor
 `coins, collected{biome→[ids]}, history{biome→{stage→[bool×≤15]}}, unlocked{biome→bool}, help{biome→{stage→0..1}}, variants{biome→{id→[rarities]}}, owned_fruits, equipped_fruit, pair_stats{pair→{stage→{right,total}}}, missed_items[ids], answered{biome→int}, sessions`.
 
 ### 3.3 Play log (user://play_log.jsonl), one line per event
-- `event: "answer"` — `{t, sid, biome, item, pair, stage, chosen, correct, hint_level, animal, rarity, streak, coins, ms_since_start, perfect}`.
-- `event: "short_throw"` — `{t, sid, biome, item, pair, stage, chosen, short, ms_since_start}`: an aimed throw that reached no animal; logged but **never counted as an answer**, so short-throw rates are reportable (proposal, "Data tracked").
-- `sid` is the per-run session id; `Progress.sessions` counts runs. Together they cover the proposal's whole "Data tracked" list. TODO before the pilot: freeze the fields with the research instruments (FR-5.4), and clear each device's old log — lines written by pre-v0.2 builds have no `event` field and must be discarded in analysis.
+- `event: "answer"` — one per sentence, its FIRST placement: `{t, sid, biome, item, pair, stage, chosen, correct, hint_level, animal, rarity, streak, coins, ms_since_start}`.
+- `event: "retry"` — a later placement into the same slot: `{t, sid, biome, item, pair, stage, chosen, correct, ms_since_start}`; **never counted as an answer**, so first-placement accuracy stays clean while persistence is still visible.
+- `sid` is the per-run session id; `Progress.sessions` counts runs. Together they cover the proposal's "Data tracked" list (short throws no longer exist: there is no aiming). TODO before the pilot: freeze the fields with the research instruments (FR-5.4), and clear each device's old log — lines from pre-redesign builds have no `event` field (or carry `short_throw`) and must be discarded in analysis.
 
 ## 4. Key design decisions and alternatives
 | Decision | Why | Alternative rejected |
@@ -108,9 +110,10 @@ Validation (load + CI): required fields; `___` present; `prev_word` occurs befor
 | No server/sync | Offline-only scope, RA 10173 exposure, logs collected in person | Firebase/Supabase (proposal suggestion, flagged in feasibility review) |
 | One `BiomeWorld` + per-biome data | Biomes differ by content/theme only; fixes propagate everywhere | Scene per biome: 5× merge-conflict-prone scenes |
 | Device TTS for narration | 0 assets, every item "read aloud" day one | 300+ recorded clips (post-MVP add-on per proposal) |
-| Per-animal choice sets | Review sentences from other pairs need their own hotbar | One hotbar per biome: breaks with spiral review |
+| Per-slot choice sets as world tiles | The search-and-collect play IS the game feel the team asked for; review sentences carry their own words | A fixed on-screen word bar (quiz-like, no exploration) |
+| First placement = the answer; retries logged separately | Keeps the proposal's first-attempt construct clean while retries stay no-stakes practice | Scoring every placement (punishes persistence) or unlogged retries (loses data) |
 | Rule checked at data load and in CI | Content errors impossible to ship silently | Trusting item authors |
-| Short throws logged, never scored | Proposal tracks them; scoring them would mix aim skill into the d/r measure | Not logging (loses data) or counting as wrong (invalidates the construct) |
+| Shop sells walking speed, not throw range | Reach no longer exists; speed is pure convenience and never gates learning | Removing the coin sink (kills the economy loop) |
 | Nickname/avatar profile deferred to pre-pilot | MVP demo needs no identity; the design is a local picker writing one string into the save | Building accounts (violates offline/no-account scope) |
 
 ## 5. Testing design

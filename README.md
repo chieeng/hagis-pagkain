@@ -10,59 +10,43 @@ din/rin, daw/raw, dito/rito, diyan/riyan and doon/roon.
 
 1. Install the Godot version above (standard build, not .NET).
 2. Clone the repo, open Godot, choose **Import**, and select `project.godot`.
-3. Press F5. The main menu opens; **Gubat** starts the game. There is no lesson screen: the game teaches as you play.
+3. Press F5. The lobby opens; walk into the **Gubat** portal to play. There is no lesson screen: the game teaches as you play.
 4. Read `AGENTS.md`. It holds the team rules, and your coding assistant reads it too.
 
-## What the prototype does (all five biomes, 3D)
+## What the prototype does (lobby + five biome zones, 3D)
 
-1. **Learning inside the game (no lesson screen).**
-   - The **deciding last letter** on each word tag glows in the colour of its fruit: pink for **rin**, orange
-     for **din** (*Masay**a***, *Gut**o**m*). The learner sees the pattern before anyone names it.
-   - The glow **fades** with each correct first throw in that stage (gone after 4) and **comes back** after a
-     miss. A miss also makes the letter jump. Numbers: `HELP_*` in `core/GameConfig.gd`.
-   - The first animal of each new kind (vowel, consonant, w/y; exceptions in Sky later) shows a short card:
-     *"Bagong uri ng hayop!"* [A new kind of animal!] with the word, its glowing letter, the fruit it takes
-     and the rule in one line. The game keeps running.
-   - Stages still go vowel → consonant → w/y, then mixed.
-2. **3D Forest (Pet Simulator style):** walk with the joystick (or WASD / arrow keys). Wild animals wear a
-   word tag (*Ikaw*, *Gutom*, *Masaya*). Pick **rin** or **din** in the hotbar (keys 1 and 2), then **hold
-   Ihagis** (or Space): the power meter goes up and down. Let go inside the green band to reach the animal
-   with the orange ring. Animals back away if you get too close.
-   - The aimed animal's **sentence with a blank** shows in a banner above the word buttons (*Masaya ___ ako.*).
-     The blank shows the word in your hand, so picking rin or din fills it and throwing it answers. It is read
-     aloud when the device has a Filipino text-to-speech voice (a **Pakinggan** [Listen] button appears).
-   - Preferred form: **"NAHULI MO!"** popup with the whole sentence and coins. The animal follows you; walk
-     into the **Kulungan** [pen] to add it to the Animal Index.
-   - Otherwise: it sniffs and walks off; a hint highlights the deciding last letter (worked example on the
-     second miss of the same sentence). The sentence comes back later on another animal. No lives, no timer.
-   - **Combo:** correct first throws in a row raise a coin multiplier; 3 in a row brings a **Bihira** [rare]
-     animal, 6 a **Ginto** [golden] one. They are shyer, so they need a stronger throw.
-   - **Tindahan** [Shop]: spend coins on better fruit that flies farther (Bayabas 10 m → Gintong Mangga 20 m).
-   - **Thrill ("juice")**: whoosh + speed lines + the camera chases the fruit with a distance counter and
-     slow-motion at the end; a moment of suspense ("?" marks, drum roll); then the reveal: light beam,
-     shockwave, confetti, screen flash and shake, sound, "NAHULI MO!" / "BIHIRANG HULI!" / "GINTONG HULI!!"
-     popup with a **BAGO!** [NEW!] badge, coins counting up. Rare/golden animals glow with sparkles and a light
-     pillar visible across the map. Releasing in the middle of the green band gives **PERPEKTO!** [PERFECT!]
-     and bonus coins. Thrill comes from skill and correct answers, never from random luck.
-   - Sounds are simple placeholder tones made in code (`autoload/AudioManager.gd`) until real sounds exist.
-3. **All five biomes** are playable: Gubat (din/rin) → Ilog (daw/raw) → Bundok (dito/rito, diyan/riyan) →
-   Himpapawid (doon/roon + the KWF exceptions) → Isla (mixed review of everything; placeholder name).
-   - The game opens on a **biome-select screen** showing progress per biome (animals caught, sentences
-     answered); any open biome can be replayed, and locked biomes say what is still needed.
-   - **From Ilog on, three fruit words** are offered (e.g., *din, rin, raw*), so the learner must also pick
-     the right word; Isla goes back to each animal's own pair.
-   - About **30% of each biome's sentences review earlier biomes** (spiral review).
-   - In Himpapawid, the **exception stage (-ra, -ri, -raw, -ray → d)** appears only after 80% on the three
-     regular stages.
-   - The next biome unlocks when the Index is full **and** every regular stage reaches 80% over its last
-     15 sentences. Press **F3** to see per-stage accuracy (team only).
-4. **Aking Pag-unlad** [My Progress]: the learner's accuracy per pair and per context, plus the sentences
-   to review next (recent misses; they leave the list once answered right).
+1. **Lobby with portals.** The game opens in a walkable 3D hub with one glowing portal per biome:
+   Gubat (din/rin) -> Ilog (daw/raw) -> Bundok (dito/rito, diyan/riyan) -> Himpapawid (doon/roon +
+   the KWF exceptions) -> Isla (mixed review; placeholder name). Open portals show progress (animals
+   rescued, sentences answered); locked ones say what is still needed. Walk into a portal to enter.
+2. **Zones are journeys.** A winding path is blocked by stations: a broken bridge over water, a
+   locked gate. Word tiles (din, rin, ...) lie scattered near the path; walk over one to collect it
+   into the word pouch.
+3. **Learning inside the game (no lesson screen).**
+   - Each station slot is one sentence with a blank, shown in a banner (and read aloud when the
+     device has a Filipino TTS voice, with a **Pakinggan** button). The slot's sign carries the word
+     before the blank with its **deciding last letter glowing** in the colour of the word it takes
+     (pink r-form, orange d-form). The glow fades with correct first placements and returns after a
+     miss. The first slot of each new kind shows a one-line **"Bagong uri ng hayop!"** card in play.
+   - Tap a pouch word to place it. Right: the plank or gate bar is built **with the word on it**.
+     Wrong: the tile pops back to the pouch, the letter hint shows (a worked example on the second
+     wrong of the same sentence). No lives, no timer, no fail state.
+   - Only the **first placement** in a slot counts as the answer (first-placement accuracy, logged);
+     retries are practice and are logged as `retry` events.
+4. **Rescue and collect.** Solving every slot of a station opens the cage past it: the animal joins
+   the Animal Index, follows you, and the invisible wall drops. Streaks of correct first placements
+   bring **rare (3) and golden (6)** animals and raise the coin multiplier (x3 max). Coins buy fruit
+   snacks in the **Tindahan** that make you walk faster. Spiral review mixes ~30% earlier-biome
+   sentences in; Himpapawid's exception stage opens after 80% on its regular stages; Isla mixes
+   everything. The next portal unlocks when the Index is full **and** every regular stage reaches
+   80% over its last 15 sentences. Press **F3** for per-stage accuracy (team only).
+5. **Aking Pag-unlad** [My Progress]: accuracy per pair and per context, plus the sentences to
+   review next.
 
-Not built yet: recorded audio (device TTS is used instead), two-blank golden Sky sentences, the egg bonus
-round, coins from pen animals over time, pen decorating, real art (everything is coloured boxes), and a
-test on a real phone. All new sentence items are `status: "draft"` until Jian and the adviser approve them.
-See `docs/SRS.md` and `docs/SDD.md` for the full requirements and design.
+Not built yet: recorded audio (device TTS is used instead), two-blank golden Sky sentences, pen
+decorating, coins from pen animals over time, real art (everything is coloured boxes), and a test on
+a real phone. All new sentence items are `status: "draft"` until Jian and the adviser approve them.
+See `docs/SRS.md`, `docs/SDD.md` and `docs/superpowers/specs/2026-11-25-portal-tile-redesign-design.md`.
 
 All numbers live in `core/GameConfig.gd`. All learner-facing Filipino text is in `ui/Strings.gd`
 and `core/Hints.gd`, ready for review.
@@ -73,10 +57,10 @@ and `core/Hints.gd`, ready for review.
 godot --path . -- --autoplay --nosave --shots=C:/some/folder
 ```
 
-The game opens the 3D forest and walks around it by itself, makes throws (including two
-misses on the same sentence, to show both hint levels), brings animals to the pen, saves screenshots of each
-step and quits. `--nosave` leaves your real save alone. Add `--biome=river` (or mountain/sky/island) to
-check another biome.
+The game walks the lobby into the Gubat portal by itself, collects tiles, solves stations (missing
+twice on one sentence to show both hint levels), rescues animals, buys from the shop, saves
+screenshots of each step and quits. `--nosave` leaves your real save alone. To check another zone,
+run its scene directly: `godot --path . res://biomes/river/River3D.tscn -- --autoplay --nosave`.
 
 ## Folders
 
