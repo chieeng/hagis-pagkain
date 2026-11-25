@@ -77,6 +77,30 @@ static func reason(prev_word: String) -> String:
 	return REASON_CONSONANT
 
 
+## Stage tag used by items and the game: "vowel", "consonant", "wy" or "exception".
+static func stage(prev_word: String) -> String:
+	match reason(prev_word):
+		REASON_VOWEL:
+			return "vowel"
+		REASON_SEMIVOWEL:
+			return "wy"
+		REASON_EXCEPTION:
+			return "exception"
+		_:
+			return "consonant"
+
+
+## How many letters at the end of prev_word decide the form, for highlighting:
+## 1 (the last letter), or the exception ending (-ra, -ri = 2; -raw, -ray = 3).
+static func deciding_length(prev_word: String) -> int:
+	var w := clean_word(prev_word)
+	if reason(w) == REASON_EXCEPTION:
+		for ending in ["raw", "ray", "ra", "ri"]:
+			if w.ends_with(ending):
+				return ending.length()
+	return 1
+
+
 static func takes_r(prev_word: String) -> bool:
 	var r := reason(prev_word)
 	return r == REASON_VOWEL or r == REASON_SEMIVOWEL

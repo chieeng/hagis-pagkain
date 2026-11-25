@@ -1,0 +1,53 @@
+{
+	"_note": "Placeholder animals drawn as simple shapes until real art exists (owner: Alex). Proposal: [8] per biome. Ids must be unique across biomes.",
+	"forest": [
+		{"id": "kuneho", "name": "Kuneho", "en": "rabbit", "color": "#c9b8a6"},
+		{"id": "ibon", "name": "Ibon", "en": "bird", "color": "#4dabf7"},
+		{"id": "unggoy", "name": "Unggoy", "en": "monkey", "color": "#8d5a3b"},
+		{"id": "kuwago", "name": "Kuwago", "en": "owl", "color": "#a07850"},
+		{"id": "tarsier", "name": "Tarsier", "en": "tarsier", "color": "#c4a484"},
+		{"id": "baboy-ramo", "name": "Baboy-ramo", "en": "wild boar", "color": "#6f4e37"},
+		{"id": "ardilya", "name": "Ardilya", "en": "squirrel", "color": "#d9822b"},
+		{"id": "bayawak", "name": "Bayawak", "en": "monitor lizard", "color": "#6b8e23"}
+	],
+	"river": [
+		{"id": "pato", "name": "Pato", "en": "duck", "color": "#ffe066"},
+		{"id": "palaka", "name": "Palaka", "en": "frog", "color": "#51cf66"},
+		{"id": "isda", "name": "Isda", "en": "fish", "color": "#74c0fc"},
+		{"id": "pagong", "name": "Pagong", "en": "turtle", "color": "#2f9e44"},
+		{"id": "tagak", "name": "Tagak", "en": "heron", "color": "#f1f3f5"},
+		{"id": "alimango", "name": "Alimango", "en": "crab", "color": "#fa5252"},
+		{"id": "hito", "name": "Hito", "en": "catfish", "color": "#495057"},
+		{"id": "gansa", "name": "Gansa", "en": "goose", "color": "#dee2e6"}
+	],
+	"mountain": [
+		{"id": "kambing", "name": "Kambing", "en": "goat", "color": "#e9ecef"},
+		{"id": "usa", "name": "Usa", "en": "deer", "color": "#b08968"},
+		{"id": "agila", "name": "Agila", "en": "eagle", "color": "#7f5539"},
+		{"id": "kabayo", "name": "Kabayo", "en": "horse", "color": "#9c6644"},
+		{"id": "tupa", "name": "Tupa", "en": "sheep", "color": "#f8f9fa"},
+		{"id": "musang", "name": "Musang", "en": "civet", "color": "#6c757d"},
+		{"id": "kalabaw", "name": "Kalabaw", "en": "carabao", "color": "#5c5c5c"},
+		{"id": "baboy-damo", "name": "Baboy-damo", "en": "mountain boar", "color": "#7d6b5d"}
+	],
+	"sky": [
+		{"id": "kalaw", "name": "Kalaw", "en": "hornbill", "color": "#343a40"},
+		{"id": "paruparo", "name": "Paru-paro", "en": "butterfly", "color": "#e599f7"},
+		{"id": "paniki", "name": "Paniki", "en": "bat", "color": "#495057"},
+		{"id": "loro", "name": "Loro", "en": "parrot", "color": "#40c057"},
+		{"id": "kalapati", "name": "Kalapati", "en": "dove", "color": "#f8f9fa"},
+		{"id": "maya", "name": "Maya", "en": "sparrow", "color": "#a9824c"},
+		{"id": "uwak", "name": "Uwak", "en": "crow", "color": "#212529"},
+		{"id": "tutubi", "name": "Tutubi", "en": "dragonfly", "color": "#3bc9db"}
+	],
+	"island": [
+		{"id": "butanding", "name": "Butanding", "en": "whale shark", "color": "#4263eb"},
+		{"id": "pawikan", "name": "Pawikan", "en": "sea turtle", "color": "#0ca678"},
+		{"id": "tuko", "name": "Tuko", "en": "gecko", "color": "#94d82d"},
+		{"id": "alitaptap", "name": "Alitaptap", "en": "firefly", "color": "#ffd43b"},
+		{"id": "talangka", "name": "Talangka", "en": "small crab", "color": "#ff8787"},
+		{"id": "dugong", "name": "Dugong", "en": "dugong", "color": "#868e96"},
+		{"id": "bangus", "name": "Bangus", "en": "milkfish", "color": "#ced4da"},
+		{"id": "tamaraw", "name": "Tamaraw", "en": "tamaraw", "color": "#5f3dc4"}
+	]
+}

@@ -1,5 +1,10 @@
 ; Engine configuration file.
-; Owner: Lead. Change autoloads/settings only through a PR the lead reviews.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -7,8 +12,12 @@ config_version=5
 
 config/name="Hagis Pagkain"
 config/description="Offline Grade 4 game for d-r alternation in Filipino (din/rin, daw/raw, dito/rito, diyan/riyan, doon/roon)."
-run/main_scene="res://main/Main.tscn"
+run/main_scene="res://main/Hub3D.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[audio]
+
+general/text_to_speech=true
 
 [autoload]
 
@@ -21,9 +30,9 @@ AudioManager="*res://autoload/AudioManager.gd"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/handheld/orientation=4
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/handheld/orientation=0
 
 [input_devices]
 

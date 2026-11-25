@@ -1,0 +1,62 @@
+[
+	{
+		"id": "mountain-v01", "biome": "mountain", "pair": "dito/rito", "stage": "vowel", "difficulty": 1,
+		"sentence": "Halika ___!", "prev_word": "Halika", "answer": "rito",
+		"translation": "Come here!", "audio": "", "status": "draft",
+		"note": "Proposal GO3 example (KWF-checked). Grade 4 naturalness not yet checked."
+	},
+	{
+		"id": "mountain-v02", "biome": "mountain", "pair": "dito/rito", "stage": "vowel", "difficulty": 1,
+		"sentence": "Pumunta ka ___ sa bahay.", "prev_word": "ka", "answer": "rito",
+		"translation": "Come here to the house.", "audio": "", "status": "draft",
+		"note": "Proposal GO3 example (KWF-checked)."
+	},
+	{
+		"id": "mountain-v03", "biome": "mountain", "pair": "diyan/riyan", "stage": "vowel", "difficulty": 1,
+		"sentence": "Ilagay mo ___ ang basket.", "prev_word": "mo", "answer": "riyan",
+		"translation": "Put the basket there.", "audio": "", "status": "draft",
+		"note": "Proposal GO3 example (KWF-checked)."
+	},
+	{
+		"id": "mountain-v04", "biome": "mountain", "pair": "diyan/riyan", "stage": "vowel", "difficulty": 1,
+		"sentence": "Itali mo ang kabayo ___.", "prev_word": "kabayo", "answer": "riyan",
+		"translation": "Tie the horse there.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "mountain-c01", "biome": "mountain", "pair": "dito/rito", "stage": "consonant", "difficulty": 1,
+		"sentence": "Nakatira ang kambing ___.", "prev_word": "kambing", "answer": "dito",
+		"translation": "The goat lives here.", "audio": "", "status": "draft",
+		"note": "Proposal GO3 example (KWF-checked)."
+	},
+	{
+		"id": "mountain-c02", "biome": "mountain", "pair": "diyan/riyan", "stage": "consonant", "difficulty": 1,
+		"sentence": "May pugad ___.", "prev_word": "pugad", "answer": "diyan",
+		"translation": "There is a nest there.", "audio": "", "status": "draft",
+		"note": "Proposal GO3 example (KWF-checked)."
+	},
+	{
+		"id": "mountain-c03", "biome": "mountain", "pair": "dito/rito", "stage": "consonant", "difficulty": 1,
+		"sentence": "Maraming bulaklak ___.", "prev_word": "bulaklak", "answer": "dito",
+		"translation": "There are many flowers here.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "mountain-w01", "biome": "mountain", "pair": "diyan/riyan", "stage": "wy", "difficulty": 2,
+		"sentence": "May bahay ___.", "prev_word": "bahay", "answer": "riyan",
+		"translation": "There is a house there.", "audio": "", "status": "draft",
+		"note": "Proposal GO3 example (KWF-checked)."
+	},
+	{
+		"id": "mountain-w02", "biome": "mountain", "pair": "dito/rito", "stage": "wy", "difficulty": 2,
+		"sentence": "Dalhin mo ang kalabaw ___.", "prev_word": "kalabaw", "answer": "rito",
+		"translation": "Bring the carabao here.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "mountain-w03", "biome": "mountain", "pair": "dito/rito", "stage": "wy", "difficulty": 2,
+		"sentence": "Naglalaro ang baboy ___.", "prev_word": "baboy", "answer": "rito",
+		"translation": "The pig plays here.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	}
+]

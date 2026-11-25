@@ -1,6 +1,17 @@
 # Hagis Pagkain — rules for every coding assistant (Claude Code, Codex) and every teammate
 
-Read this whole file before changing anything. `CLAUDE.md` just points here, so there is one set of rules.
+Read this whole file before changing anything.
+
+**Design direction (professor and team feedback Nov 2026; mechanic redesign approved by the team
+25 Nov 2026, see `docs/superpowers/specs/2026-11-25-portal-tile-redesign-design.md`):** not quiz-type,
+not story-type, and **no lesson screen before play**. The game is a hub-and-portals adventure: the
+learner walks a lobby, enters a biome portal, and repairs the broken path (bridges, gates) by
+collecting **word tiles** (din, rin, ...) and placing them into sentence slots. The deciding last
+letter on each slot's sign glows in its word's colour and fades as they get it right (it comes back
+after a miss); the first slot of each new kind shows a short in-game example. Only the FIRST tile
+placed in a slot counts as the answer; retries are hints-and-practice. Solving a station frees the
+caged animal into the Animal Index. Do not bring back throwing, and do not bring back separate
+fill-in-the-blank question screens. `CLAUDE.md` just points here, so there is one set of rules.
 
 ## What this is
 
@@ -43,11 +54,14 @@ also listed in `.github/CODEOWNERS`, so GitHub asks them to review.
 
 | Member | Area | Files |
 |---|---|---|
-| Lead | Integration, core gameplay, build | `project.godot`, `main/`, `autoload/GameState.gd`, `core/ThrowController.*`, `core/FoodItem.*`, `biomes/BiomeTemplate.*`, `.github/` |
-| Loraine | Biome levels (assists Lead) | `biomes/forest/`, `biomes/river/`, `biomes/mountain/`, `biomes/sky/` |
-| Irish | Systems | `core/DRRule.gd`, `autoload/SaveManager.gd`, scoring/adaptivity scripts, `tests/` |
-| Jian | Content + QA/research | `data/`, `autoload/QuestionBank.gd`, `docs/testing/` |
-| Alex | UI, art, audio | `ui/`, `assets/`, `autoload/AudioManager.gd` |
+| Lead | Integration, core gameplay, build | `project.godot`, `main/`, `autoload/GameState.gd`, `world/BiomeWorld.gd`, `world/Player3D.gd`, `world/Animal3D.gd` (behaviour), `world/Joystick.gd`, `.github/` |
+| Loraine | Biome levels (assists Lead) | `biomes/forest/`, `biomes/river/`, `biomes/mountain/`, `biomes/sky/` (each a scene using `world/BiomeWorld.gd`) |
+| Irish | Systems | `core/DRRule.gd`, `core/BiomeSession.gd`, `core/Progress.gd`, `core/Hints.gd` (logic), `core/GameConfig.gd`, `autoload/SaveManager.gd`, `tests/` |
+| Jian | Content + QA/research | `data/`, `autoload/QuestionBank.gd`, `docs/testing/`, Filipino wording in `ui/Strings.gd` and `core/Hints.gd` |
+| Alex | UI, art, audio | `ui/` (except Strings wording), `world/Blocky.gd` and model look, `assets/`, `autoload/AudioManager.gd` |
+
+Game logic stays in `core/BiomeSession.gd` and `core/Progress.gd`, which have no visuals and are unit-tested.
+Scenes only display it. All tunable numbers go in `core/GameConfig.gd`.
 
 **Scenes (`.tscn`) cause the worst merge conflicts.** Never edit a scene you do not own, even "just a
 small fix". Make your own small scene and instance it.
@@ -84,6 +98,6 @@ means everything passed.
 
 - Do not add internet calls, analytics, ads, accounts or a teacher dashboard.
 - Do not add dati/rati or any pair beyond the five above.
-- Do not rename the autoloads, signals or functions in `BiomeTemplate.gd` without the lead. Other people's
-  code depends on them.
+- Do not rename the autoloads, or the signals/functions in `world/BiomeWorld.gd`, `world/Animal3D.gd` and
+  `core/BiomeSession.gd`, without the lead. Other people's code depends on them.
 - Do not mass-reformat files you were not asked to touch.

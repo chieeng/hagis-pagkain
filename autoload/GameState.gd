@@ -1,51 +1,54 @@
 extends Node
 ## Owner: Lead.
-## Holds the player's progress for the current session. SaveManager persists it.
-## Other scripts read/write progress ONLY through this autoload.
+## The live Progress for this play session. SaveManager saves and loads it.
 
-signal score_changed(new_score: int)
-signal biome_completed(biome: String, stars: int)
+signal biome_unlocked(biome: String)
 
 ## Biome order = unlock order. Pairs per biome are fixed by the proposal.
 const BIOMES := {
 	"forest": ["din/rin"],
 	"river": ["daw/raw"],
 	"mountain": ["dito/rito", "diyan/riyan"],
-	"sky": ["doon/roon", "exceptions"],
+	"sky": ["doon/roon", "espesyal"],
+	"island": ["lahat"],   # mixed review of every pair [proposal]; "Isla" is a placeholder name
 }
-const BIOME_ORDER := ["forest", "river", "mountain", "sky"]
+const BIOME_ORDER: Array[String] = ["forest", "river", "mountain", "sky", "island"]
+const BIOME_NAMES := {"forest": "Gubat", "river": "Ilog", "mountain": "Bundok", "sky": "Himpapawid", "island": "Isla"}
+## Biomes that have a playable scene in this build.
+const BIOME_SCENES := {
+	"forest": "res://biomes/forest/Forest3D.tscn",
+	"river": "res://biomes/river/River3D.tscn",
+	"mountain": "res://biomes/mountain/Mountain3D.tscn",
+	"sky": "res://biomes/sky/Sky3D.tscn",
+	"island": "res://biomes/island/Island3D.tscn",
+}
 
-var current_biome: String = "forest"
-var score: int = 0
-## biome -> best stars (0-3)
-var stars: Dictionary = {}
-## biome -> true
-var unlocked: Dictionary = {"forest": true}
-
-
-func add_score(points: int) -> void:
-	score += points
-	score_changed.emit(score)
-
-
-func complete_biome(biome: String, earned_stars: int) -> void:
-	stars[biome] = max(int(stars.get(biome, 0)), earned_stars)
-	var i := BIOME_ORDER.find(biome)
-	if i >= 0 and i + 1 < BIOME_ORDER.size():
-		unlocked[BIOME_ORDER[i + 1]] = true
-	biome_completed.emit(biome, earned_stars)
-	SaveManager.save_game()
+var progress := Progress.new()
 
 
 func is_unlocked(biome: String) -> bool:
-	return unlocked.get(biome, false)
+	return progress.unlocked.get(biome, false)
+
+
+func next_biome(biome: String) -> String:
+	var i := BIOME_ORDER.find(biome)
+	return BIOME_ORDER[i + 1] if i >= 0 and i + 1 < BIOME_ORDER.size() else ""
+
+
+## Unlocks the biome after `biome`. Returns its id, or "" if nothing new was unlocked.
+func unlock_next(biome: String) -> String:
+	var nb := next_biome(biome)
+	if nb == "" or is_unlocked(nb):
+		return ""
+	progress.unlocked[nb] = true
+	biome_unlocked.emit(nb)
+	SaveManager.save_game()
+	return nb
 
 
 func to_dict() -> Dictionary:
-	return {"score": score, "stars": stars, "unlocked": unlocked}
+	return progress.to_dict()
 
 
 func from_dict(data: Dictionary) -> void:
-	score = int(data.get("score", 0))
-	stars = data.get("stars", {})
-	unlocked = data.get("unlocked", {"forest": true})
+	progress.from_dict(data)

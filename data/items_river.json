@@ -1,0 +1,56 @@
+[
+	{
+		"id": "river-v01", "biome": "river", "pair": "daw/raw", "stage": "vowel", "difficulty": 1,
+		"sentence": "Mataba ___ ang pato.", "prev_word": "Mataba", "answer": "raw",
+		"translation": "The duck is fat, they say.", "audio": "", "status": "draft",
+		"note": "Proposal GO2 example (KWF-checked). Grade 4 naturalness not yet checked."
+	},
+	{
+		"id": "river-v02", "biome": "river", "pair": "daw/raw", "stage": "vowel", "difficulty": 1,
+		"sentence": "Totoo ___ ang balita.", "prev_word": "Totoo", "answer": "raw",
+		"translation": "The news is true, they say.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "river-v03", "biome": "river", "pair": "daw/raw", "stage": "vowel", "difficulty": 1,
+		"sentence": "Kumanta ___ ang palaka.", "prev_word": "Kumanta", "answer": "raw",
+		"translation": "The frog sang, they say.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "river-c01", "biome": "river", "pair": "daw/raw", "stage": "consonant", "difficulty": 1,
+		"sentence": "Umuulan ___ sa bundok.", "prev_word": "Umuulan", "answer": "daw",
+		"translation": "It is raining in the mountains, they say.", "audio": "", "status": "draft",
+		"note": "Proposal GO2 example (KWF-checked)."
+	},
+	{
+		"id": "river-c02", "biome": "river", "pair": "daw/raw", "stage": "consonant", "difficulty": 1,
+		"sentence": "Malamig ___ ang tubig.", "prev_word": "Malamig", "answer": "daw",
+		"translation": "The water is cold, they say.", "audio": "", "status": "draft",
+		"note": "Proposal GO2 example (KWF-checked)."
+	},
+	{
+		"id": "river-c03", "biome": "river", "pair": "daw/raw", "stage": "consonant", "difficulty": 1,
+		"sentence": "Masarap ___ ang isda.", "prev_word": "Masarap", "answer": "daw",
+		"translation": "The fish is delicious, they say.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	},
+	{
+		"id": "river-w01", "biome": "river", "pair": "daw/raw", "stage": "wy", "difficulty": 2,
+		"sentence": "Ikaw ___ ang susunod.", "prev_word": "Ikaw", "answer": "raw",
+		"translation": "You are next, they say.", "audio": "", "status": "draft",
+		"note": "Proposal GO2 example (KWF-checked)."
+	},
+	{
+		"id": "river-w02", "biome": "river", "pair": "daw/raw", "stage": "wy", "difficulty": 2,
+		"sentence": "Matibay ___ ang tulay.", "prev_word": "Matibay", "answer": "raw",
+		"translation": "The bridge is sturdy, they say.", "audio": "", "status": "draft",
+		"note": "Proposal GO2 example (KWF-checked)."
+	},
+	{
+		"id": "river-w03", "biome": "river", "pair": "daw/raw", "stage": "wy", "difficulty": 2,
+		"sentence": "Mahusay ___ lumangoy ang pato.", "prev_word": "Mahusay", "answer": "raw",
+		"translation": "The duck swims well, they say.", "audio": "", "status": "draft",
+		"note": "AI draft, not from the proposal. Needs Jian/adviser review."
+	}
+]
